@@ -1,4 +1,4 @@
-package com.shazam.dp.dataengineering.pipelinebuilder;
+package com.shazam.dataengineering.pipelinebuilder;
 import hudson.Launcher;
 import hudson.Extension;
 import hudson.util.FormValidation;
