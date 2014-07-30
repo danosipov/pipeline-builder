@@ -26,8 +26,8 @@ public class PipelineBuilder extends Builder {
     private Environment[] configParams;
     private String file;
 
-    private static Environment productionEnvironment = new Environment("Production");
-    private static Environment developmentEnvironment = new Environment("Development");
+    private static ProductionEnvironment productionEnvironment = new ProductionEnvironment("Production");
+    private static DevelopmentEnvironment developmentEnvironment = new DevelopmentEnvironment("Development");
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
@@ -38,6 +38,7 @@ public class PipelineBuilder extends Builder {
 
     @Override
     public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) {
+        // TODO
         return true;
     }
 

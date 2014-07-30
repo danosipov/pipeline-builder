@@ -9,10 +9,12 @@ import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
+import java.io.Serializable;
+
 /**
  * Created by daniil.osipov on 7/29/14.
  */
-public class Environment implements Describable<Environment> {
+public class Environment implements Describable<Environment>, Serializable {
     private String name;
     private String properties;
 
@@ -27,20 +29,12 @@ public class Environment implements Describable<Environment> {
         this.properties = configParam;
     }
 
-    public EnvironmentDescriptor getDescriptor() {
-        //return (EnvironmentDescriptor) Jenkins.getInstance().getDescriptor(getClass());
-        return new EnvironmentDescriptor();
+    public String getName() {
+        return name;
     }
 
-    public class EnvironmentDescriptor extends Descriptor<Environment> {
-        @Override
-        public String getDisplayName() {
-            return name;
-        }
-
-        public String getName() {
-            return name;
-        }
+    public EnvironmentDescriptor getDescriptor() {
+        return (EnvironmentDescriptor) Jenkins.getInstance().getDescriptor(getClass());
     }
 
 }

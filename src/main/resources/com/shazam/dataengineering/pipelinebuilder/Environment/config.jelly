@@ -6,7 +6,7 @@
             <f:textarea field="configParam"/>
         </f:entry>
         <f:invisibleEntry>
-            <f:textbox field="name" />
+            <f:textbox name="name" field="name" value="${descriptor.type}"/>
         </f:invisibleEntry>
     </table>
 </j:jelly>
