@@ -1,0 +1,29 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
+         xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+    <!--
+      This jelly script is used for per-project configuration.
+
+      See global.jelly for a general discussion about jelly script.
+    -->
+
+    <!--
+      Creates a text field that shows the value of the "name" property.
+      When submitted, it will be passed to the corresponding constructor parameter.
+    -->
+    <f:entry title="Pipeline file" field="filePath">
+        <f:textbox name="filePath"/>
+    </f:entry>
+    <f:entry>
+        <f:block>
+            <f:hetero-list name="environment" hasHeader="true"
+                           descriptors="${descriptor.getEnvironmentDescriptions(it)}"
+                           items="${instance.environmentList}"
+                           oneEach="false"
+                           menuAlign="bl-tl"
+                           honorOrder="false"
+                           deleteCaption="${%Delete configuration}"
+                           addCaption="${%Add configuration}"/>
+        </f:block>
+
+    </f:entry>
+</j:jelly>
