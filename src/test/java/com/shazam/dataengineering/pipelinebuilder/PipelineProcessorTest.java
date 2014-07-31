@@ -1,6 +1,7 @@
 package com.shazam.dataengineering.pipelinebuilder;
 
 import hudson.model.AbstractBuild;
+import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
 import hudson.model.Result;
 import org.junit.Assert;
@@ -28,8 +29,7 @@ public class PipelineProcessorTest {
     @WithoutJenkins
     public void getSubstitutionMapShouldConvertEnvironmentParametersToMap() throws Exception {
         BuildListener listener = Mockito.mock(BuildListener.class);
-        AbstractBuild build = Mockito.mock(AbstractBuild.class);
-        PipelineProcessor processor = new PipelineProcessor(build, listener);
+        PipelineProcessor processor = new PipelineProcessor(getMockAbstractBuild(), listener);
 
         Method method = processor.getClass().getDeclaredMethod("getSubstitutionMap", Environment.class);
         method.setAccessible(true);
@@ -48,8 +48,7 @@ public class PipelineProcessorTest {
     @WithoutJenkins
     public void performSubstitutionsShouldSubstitutePlaceholders() throws Exception {
         BuildListener listener = Mockito.mock(BuildListener.class);
-        AbstractBuild build = Mockito.mock(AbstractBuild.class);
-        PipelineProcessor processor = new PipelineProcessor(build, listener);
+        PipelineProcessor processor = new PipelineProcessor(getMockAbstractBuild(), listener);
 
         Method method = processor.getClass().getDeclaredMethod("performSubstitutions", String.class, Environment.class);
         method.setAccessible(true);
@@ -60,5 +59,14 @@ public class PipelineProcessorTest {
 
         String result = (String) method.invoke(processor, json, env);
         Assert.assertEquals(expected, result);
+    }
+
+    private AbstractBuild getMockAbstractBuild() {
+        AbstractBuild build = Mockito.mock(AbstractBuild.class);
+        AbstractProject project = Mockito.mock(AbstractProject.class);
+        Mockito.when(build.getProject()).thenReturn(project);
+        Mockito.when(project.getName()).thenReturn("test");
+        Mockito.when(build.getNumber()).thenReturn(42);
+        return build;
     }
 }
