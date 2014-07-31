@@ -28,7 +28,8 @@ public class PipelineProcessorTest {
     @WithoutJenkins
     public void getSubstitutionMapShouldConvertEnvironmentParametersToMap() throws Exception {
         BuildListener listener = Mockito.mock(BuildListener.class);
-        PipelineProcessor processor = new PipelineProcessor(listener);
+        AbstractBuild build = Mockito.mock(AbstractBuild.class);
+        PipelineProcessor processor = new PipelineProcessor(build, listener);
 
         Method method = processor.getClass().getDeclaredMethod("getSubstitutionMap", Environment.class);
         method.setAccessible(true);
@@ -41,5 +42,23 @@ public class PipelineProcessorTest {
         Assert.assertEquals("value2", result.get("key2"));
         Assert.assertEquals("$value3", result.get("$key3"));
         Assert.assertFalse(result.containsKey("notThere"));
+    }
+
+    @Test
+    @WithoutJenkins
+    public void performSubstitutionsShouldSubstitutePlaceholders() throws Exception {
+        BuildListener listener = Mockito.mock(BuildListener.class);
+        AbstractBuild build = Mockito.mock(AbstractBuild.class);
+        PipelineProcessor processor = new PipelineProcessor(build, listener);
+
+        Method method = processor.getClass().getDeclaredMethod("performSubstitutions", String.class, Environment.class);
+        method.setAccessible(true);
+
+        Environment env = new Environment("test", "key1: value1\nkey2: value2\n$key3: $value3");
+        String json = "{\"object1\":\"${key1}\", \"object2\":\"${$key3}\", \"object3\":\"${key4}\"}";
+        String expected = "{\"object1\":\"value1\", \"object2\":\"$value3\", \"object3\":\"${key4}\"}";
+
+        String result = (String) method.invoke(processor, json, env);
+        Assert.assertEquals(expected, result);
     }
 }

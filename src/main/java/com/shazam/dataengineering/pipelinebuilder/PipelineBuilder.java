@@ -1,11 +1,13 @@
 package com.shazam.dataengineering.pipelinebuilder;
 
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.*;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
+import hudson.tasks.Recorder;
 import hudson.util.FormValidation;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -31,12 +33,21 @@ public class PipelineBuilder extends Builder {
     }
 
     @Override
-    public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) {
-        FilePath input = build.getWorkspace().child(file);
-        PipelineProcessor processor = new PipelineProcessor(listener);
+    public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener)
+            throws IOException, InterruptedException {
+        FilePath ws = build.getWorkspace();
+        FilePath input = ws.child(file);
+
+        PipelineProcessor processor = new PipelineProcessor(build, listener);
         processor.setEnvironments(configParams);
 
-        return processor.process(input);
+        boolean result = processor.process(input);
+        if (result) {
+            // TODO: Add files for release
+            //build.pickArtifactManager().archive(ws, launcher, listener, files);
+        }
+
+        return result;
     }
 
     /**

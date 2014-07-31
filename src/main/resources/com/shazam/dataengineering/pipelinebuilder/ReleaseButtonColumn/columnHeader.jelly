@@ -1,0 +1,6 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler">
+    <th width="1">
+        <st:nbsp/>
+    </th>
+</j:jelly>
