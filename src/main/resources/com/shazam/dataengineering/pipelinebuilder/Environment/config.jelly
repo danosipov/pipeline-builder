@@ -1,12 +1,9 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
          xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-
-    <table width="100%">
         <f:entry title="Parameters">
             <f:textarea field="configParam"/>
         </f:entry>
         <f:invisibleEntry>
             <f:textbox name="name" field="name" value="${descriptor.type}"/>
         </f:invisibleEntry>
-    </table>
 </j:jelly>

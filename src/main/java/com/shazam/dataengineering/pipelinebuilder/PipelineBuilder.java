@@ -1,14 +1,11 @@
 package com.shazam.dataengineering.pipelinebuilder;
 
 import hudson.Extension;
+import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.BuildListener;
-import hudson.model.Descriptor;
+import hudson.model.*;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
-import hudson.util.DescribableList;
 import hudson.util.FormValidation;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -17,10 +14,7 @@ import org.kohsuke.stapler.StaplerRequest;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class PipelineBuilder extends Builder {
     private Environment[] configParams;
@@ -38,8 +32,11 @@ public class PipelineBuilder extends Builder {
 
     @Override
     public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) {
-        // TODO
-        return true;
+        FilePath input = build.getWorkspace().child(file);
+        PipelineProcessor processor = new PipelineProcessor(listener);
+        processor.setEnvironments(configParams);
+
+        return processor.process(input);
     }
 
     /**
@@ -57,12 +54,12 @@ public class PipelineBuilder extends Builder {
         return "AWS Data Pipeline";
     }
 
-    //public DescribableList<Environment, Descriptor<Environment>> getEnvironmentList() {
-        //DescribableList<Environment, Descriptor<Environment>> list = new DescribableList<Environment, Descriptor<Environment>>(this);
-    public Map<Descriptor<Environment>, Environment> getEnvironmentList() {
-        HashMap<Descriptor<Environment>, Environment> env = new HashMap<Descriptor<Environment>, Environment>();
-        for (Environment environment: configParams) {
-            env.put(environment.getDescriptor(), environment);
+    public List<Environment> getEnvironmentList() {
+        ArrayList<Environment> env = new ArrayList<Environment>();
+        if (configParams != null) {
+            for (Environment environment : configParams) {
+                env.add(environment);
+            }
         }
         return env;
     }
@@ -114,6 +111,17 @@ public class PipelineBuilder extends Builder {
 //                return FormValidation.warning("Isn't the name too short?");
             return FormValidation.ok();
         }
+
+        // TODO: No path to workspace, can't verify
+//        public FormValidation doCheckFilePath(@QueryParameter String value)
+//                throws IOException, ServletException, InterruptedException {
+//            FilePath path = new FilePath(new File(value));
+//            if (!path.exists()) {
+//                return FormValidation.error("Defined file doesn't exist");
+//            } else {
+//                return FormValidation.ok();
+//            }
+//        }
 
         public boolean isApplicable(Class<? extends AbstractProject> aClass) {
             // Indicates that this builder can be used with all kinds of project types

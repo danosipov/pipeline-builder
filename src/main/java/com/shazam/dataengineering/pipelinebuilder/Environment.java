@@ -33,6 +33,10 @@ public class Environment implements Describable<Environment>, Serializable {
         return name;
     }
 
+    public String getConfigParam() {
+        return properties;
+    }
+
     public EnvironmentDescriptor getDescriptor() {
         return (EnvironmentDescriptor) Jenkins.getInstance().getDescriptor(getClass());
     }
