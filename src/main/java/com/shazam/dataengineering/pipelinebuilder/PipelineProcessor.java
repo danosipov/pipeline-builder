@@ -42,7 +42,7 @@ public class PipelineProcessor {
                 for (Environment env: environments) {
                     String fileName = getFileName(env, counter);
                     counter += 1;
-
+                    storeProcessedFile(fileName, text, env);
                 }
                 return true;
             } catch (IOException e) {
@@ -74,7 +74,7 @@ public class PipelineProcessor {
             listener.getLogger().println("[WARN] " + warning);
         }
 
-        FilePath newPath = new FilePath(build.getWorkspace(), fileName);
+        FilePath newPath = new FilePath(new FilePath(build.getArtifactsDir()), fileName);
         try {
             newPath.copyFrom(new ByteArrayInputStream((newJson.getBytes(StandardCharsets.UTF_8))));
             return true;
