@@ -9,6 +9,7 @@ import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.tasks.Recorder;
 import hudson.util.FormValidation;
+import hudson.util.ListBoxModel;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
@@ -43,8 +44,7 @@ public class PipelineBuilder extends Builder {
 
         boolean result = processor.process(input);
         if (result) {
-            // TODO: Add files for release
-            //build.pickArtifactManager().archive(ws, launcher, listener, files);
+            build.addAction(new DeploymentAction(build.getProject()));
         }
 
         return result;
