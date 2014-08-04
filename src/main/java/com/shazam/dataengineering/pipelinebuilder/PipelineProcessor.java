@@ -12,6 +12,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PipelineProcessor {
+    public static final String FILE_NAME_FORMAT = "%s%d-%s-%d.json";
+
     private AbstractBuild build;
     private BuildListener listener;
     private ArrayList<Environment> environments;
@@ -62,7 +64,7 @@ public class PipelineProcessor {
             prefix = "u";
         }
 
-        return String.format("%s%d-%s-%d.json", prefix, counter, name, buildNumber);
+        return String.format(FILE_NAME_FORMAT, prefix, counter, name, buildNumber);
     }
 
     private boolean storeProcessedFile(String fileName, String json, Environment environment) {
@@ -70,6 +72,13 @@ public class PipelineProcessor {
         List<String> warnings = warnForUnreplacedKeys(newJson);
         for (String warning: warnings) {
             listener.getLogger().println("[WARN] " + warning);
+        }
+
+        // Validate created pipeline
+        PipelineObject pipelineObject = new PipelineObject(json);
+        if (!pipelineObject.isValid()) {
+            listener.error("Resulting JSON file is invalid pipeline object");
+            return false;
         }
 
         FilePath newPath = new FilePath(new FilePath(build.getArtifactsDir()), fileName);

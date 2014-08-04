@@ -1,0 +1,112 @@
+{
+  "objects": [
+    {
+      "id": "RedshiftDatabaseId_atp",
+      "username": "awsdata",
+      "name": "Audience Targetting Database",
+      "*password": "Itsallaboutthedata1",
+      "type": "RedshiftDatabase",
+      "clusterId": "audience-targeting"
+    },
+    {
+      "id": "RedshiftDatabaseId_adp",
+      "username": "awsdata",
+      "name": "Audience DB Production Database",
+      "*password": "Itsallaboutthedata1",
+      "type": "RedshiftDatabase",
+      "clusterId": "audience-db-production"
+    },
+    {
+      "id": "RedshiftDatabaseId_sdw",
+      "username": "awsdata",
+      "name": "Shazam DW Database",
+      "*password": "Itsallaboutthedata1",
+      "type": "RedshiftDatabase",
+      "clusterId": "shazam-dw"
+    },
+    {
+      "id": "ScheduleId_Pjei4",
+      "startDateTime": "2014-07-29T15:00:00",
+      "name": "Daily",
+      "type": "Schedule",
+      "period": "1 Day"
+    },
+    {
+      "id": "ActivityId_32rpj",
+      "schedule": {
+        "ref": "ScheduleId_Pjei4"
+      },
+      "name": "UNLOAD the DB",
+      "runsOn": {
+        "ref": "Ec2Resource_z0jF4"
+      },
+      "maximumRetries": "0",
+      "onFail": {
+        "ref": "ActionId_okp3f"
+      },
+      "type": "SqlActivity",
+      "script": "UNLOAD('SELECT * FROM accounts') TO 's3://data-engineering-team-bucket/production/accountsclone/#{format(@scheduledStartTime,'YYYY-MM-dd')}/' credentials 'aws_access_key_id=AKIAJGP63MW3DFBAPIKQ;aws_secret_access_key=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' delimiter '\t';",
+      "database": {
+        "ref": "RedshiftDatabaseId_adp"
+      }
+    },
+    {
+      "id": "ActivityId_oPj35",
+      "schedule": {
+        "ref": "ScheduleId_Pjei4"
+      },
+      "name": "Copy Accounts table to Shazam DW",
+      "runsOn": {
+        "ref": "Ec2Resource_z0jF4"
+      },
+      "maximumRetries": "0",
+      "onFail": {
+        "ref": "ActionId_okp3f"
+      },
+      "type": "SqlActivity",
+      "script": "CREATE TABLE accounts_clone (installationid varchar(60) encode lzo,accountid char(36) encode lzo,androidid varchar(32) encode lzo,anid2 char(44) encode lzo,channel varchar(255) encode lzo,country char(2) encode bytedict,model varchar(100) encode lzo,duid varchar(150) encode lzo,facebookappuserid char(152) encode lzo,flavour varchar(10) encode lzo,idfa char(36) encode lzo,imei varchar(20) encode lzo,imsi varchar(20) encode lzo,language varchar(20) encode bytedict,osname varchar(20) encode bytedict,osversion varchar(20) encode bytedict, platform varchar(20) encode bytedict,appversion varchar(10) encode bytedict,creationdate timestamp encode delta,lastmodifieddate timestamp encode delta,newsfeedenabled boolean)distkey(accountid) sortkey(accountid);COPY accounts_clone FROM 's3://data-engineering-team-bucket/production/accountsclone/#{format(@scheduledStartTime,\"YYYY-MM-dd\")}/' CREDENTIALS 'aws_access_key_id=AKIAJWZPAGLR6TV7N7KA;aws_secret_access_key=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' delimiter '\t' COMPROWS 100000000 MAXERROR 100 TRUNCATECOLUMNS EMPTYASNULL BLANKSASNULL;DROP VIEW reporting.accounts;DROP TABLE accounts;ALTER TABLE accounts_clone RENAME TO accounts;CREATE VIEW reporting.accounts AS SELECT accountid, installationid, idfa, androidid, country, language, platform, appversion, osversion, model FROM accounts;",
+      "dependsOn": {
+        "ref": "ActivityId_32rpj"
+      },
+      "database": {
+        "ref": "RedshiftDatabaseId_sdw"
+      }
+    },
+    {
+      "id": "ActionId_okp3f",
+      "message": "Accounts DB Clone failed.",
+      "subject": "Data Pipeline Error",
+      "name": "Accounts DB Clone Failed",
+      "topicArn": "arn:aws:sns:us-east-1:784428439351:data_pipeline__accounts_clone",
+      "role": "DataPipelineDefaultRole",
+      "type": "SnsAlarm"
+    },
+    {
+      "id": "Default",
+      "scheduleType": "cron",
+      "name": "Default",
+      "failureAndRerunMode": "cascade",
+      "role": "DataPipelineDefaultRole",
+      "resourceRole": "DataPipelineDefaultResourceRole"
+    },
+    {
+      "id": "Ec2Resource_z0jF4",
+      "type": "Ec2Resource",
+      "actionOnTaskFailure": "terminate",
+      "terminateAfter": "5 Hours",
+      "actionOnResourceFailure": "retryAll",
+      "maximumRetries": "3",
+      "role": "DataPipelineDefaultRole",
+      "resourceRole": "DataPipelineDefaultResourceRole",
+      "instanceType": "m1.small",
+      "securityGroups": [
+        "default"
+      ],
+      "schedule": {
+        "ref": "ScheduleId_Pjei4"
+      },
+      "logUri": "s3://data-engineering-team-bucket/adptasklogs",
+      "keyPair": "dataengineeringkeypair"
+    }
+  ]
+}

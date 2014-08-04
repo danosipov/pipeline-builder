@@ -1,0 +1,96 @@
+{
+  "objects": [
+    {
+      "id": "RedshiftDatabaseId_123",
+      "username": "username",
+      "name": "Redshift DB",
+      "*password": "password",
+      "type": "RedshiftDatabase",
+      "clusterId": "cluster1"
+    },
+    {
+      "id": "ScheduleId_234",
+      "startDateTime": "2014-07-26T01:20:00",
+      "name": "Daily",
+      "type": "Schedule",
+      "period": "1 Day"
+    },
+    {
+      "id": "ActivityId_345",
+      "schedule": {
+        "ref": "ScheduleId_234"
+      },
+      "name": "EMR Activity",
+      "runsOn": {
+        "ref": "EmrClusterId_678"
+      },
+      "maximumRetries": "0",
+      "onFail": {
+        "ref": "ActionId_456"
+      },
+      "type": "EmrActivity",
+      "step": [
+        "step-configuration"
+      ]
+    },
+    {
+      "id": "ActionId_456",
+      "message": "Fail Message",
+      "subject": "Error",
+      "name": "Failure SNS",
+      "topicArn": "arn:aws:sns:...",
+      "role": "DataPipelineRole",
+      "type": "SnsAlarm"
+    },
+    {
+      "id": "ActivityId_567",
+      "schedule": {
+        "ref": "ScheduleId_234"
+      },
+      "name": "Run SQL",
+      "runsOn": {
+        "ref": "EmrClusterId_678"
+      },
+      "maximumRetries": "0",
+      "onFail": {
+        "ref": "ActionId_456"
+      },
+      "type": "SqlActivity",
+      "script": "SELECT 1;",
+      "dependsOn": {
+        "ref": "ActivityId_345"
+      },
+      "database": {
+        "ref": "RedshiftDatabaseId_123"
+      }
+    },
+    {
+      "id": "Default",
+      "scheduleType": "cron",
+      "name": "Default",
+      "failureAndRerunMode": "cascade",
+      "role": "DataPipelineRole",
+      "resourceRole": "DataPipelineResourceRole"
+    },
+    {
+      "terminateAfter": "10 Hours",
+      "id": "EmrClusterId_678",
+      "region": "us-east-1",
+      "emrLogUri": "s3://bucket/",
+      "keyPair": "mykeypair",
+      "schedule": {
+        "ref": "ScheduleId_234"
+      },
+      "bootstrapAction": [
+        "s3://bucket/bootstrap-script.sh"
+      ],
+      "masterInstanceType": "m1.small",
+      "coreInstanceType": "m1.small",
+      "enableDebugging": "true",
+      "name": "DefaultEmrCluster1",
+      "coreInstanceCount": "1",
+      "logUri": "s3://bucket/tasklogs",
+      "type": "EmrCluster"
+    }
+  ]
+}

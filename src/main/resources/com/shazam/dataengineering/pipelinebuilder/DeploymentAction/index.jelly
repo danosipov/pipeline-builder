@@ -21,7 +21,7 @@
 
 
                             <f:entry title="${%Select Pipeline to Deploy}" field="pipeline">
-                                <select>
+                                <select id="pipelineSelector" name="pipelines">
                                     <option value=""></option>
                                     <j:forEach var="pipeline" items="${it.getPipelines()}">
                                         <option value="${pipeline}">${pipeline}</option>
