@@ -33,8 +33,11 @@ public class PipelineObjectTest {
 
         PipelineObject obj = new PipelineObject(json);
         PipelineObject validation = new PipelineObject(replacedJson);
+        Assert.assertEquals("2014-07-26T01:20:00", obj.getScheduleDate());
 
         obj.setScheduleDate("2014-08-22T03:45:10");
+
+        Assert.assertEquals("2014-08-22T03:45:10", obj.getScheduleDate());
         Assert.assertEquals(validation.getJson(), obj.getJson());
     }
 

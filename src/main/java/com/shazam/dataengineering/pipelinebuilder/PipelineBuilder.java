@@ -1,5 +1,6 @@
 package com.shazam.dataengineering.pipelinebuilder;
 
+import com.amazonaws.auth.BasicAWSCredentials;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
@@ -44,7 +45,10 @@ public class PipelineBuilder extends Builder {
 
         boolean result = processor.process(input);
         if (result) {
-            build.addAction(new DeploymentAction(build.getProject()));
+            build.addAction(new DeploymentAction(build,
+                    new BasicAWSCredentials(
+                            getDescriptor().getAccessId(),
+                            getDescriptor().getSecretKey())));
         }
 
         return result;
@@ -75,6 +79,11 @@ public class PipelineBuilder extends Builder {
         return env;
     }
 
+    @Override
+    public DescriptorImpl getDescriptor() {
+        return (DescriptorImpl) super.getDescriptor();
+    }
+
     /**
      * Descriptor for {@link PipelineBuilder}. Used as a singleton.
      * The class is marked as public so that it can be accessed from views.
@@ -91,8 +100,8 @@ public class PipelineBuilder extends Builder {
          * <p>
          * If you don't want fields to be persisted, use <tt>transient</tt>.
          */
-        private String filePath;
-        private Environment[] configParams;
+        public String accessId;
+        public String secretKey;
 
         /**
          * In order to load the persisted global configuration, you have to
@@ -150,7 +159,9 @@ public class PipelineBuilder extends Builder {
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
             // To persist global configuration information,
             // set that to properties and call save().
-            filePath = formData.getString("filePath");
+            accessId = formData.getString("accessId");
+            secretKey = formData.getString("secretKey");
+
             // ^Can also use req.bindJSON(this, formData);
             //  (easier when there are many fields; need set* methods for this, like setUseFrench)
             save();
@@ -171,16 +182,12 @@ public class PipelineBuilder extends Builder {
             return descriptors;
         }
 
+        public String getAccessId() {
+            return accessId;
+        }
 
-
-        /**
-         * This method returns true if the global configuration says we should speak French.
-         *
-         * The method name is bit awkward because global.jelly calls this method to determine
-         * the initial state of the checkbox by the naming convention.
-         */
-        public String getFilePath() {
-            return filePath;
+        public String getSecretKey() {
+            return secretKey;
         }
     }
 }

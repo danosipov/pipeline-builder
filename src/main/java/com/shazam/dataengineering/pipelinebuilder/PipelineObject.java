@@ -45,6 +45,18 @@ public class PipelineObject {
         }
     }
 
+    public String getScheduleDate() {
+        JSONArray objectArray = (JSONArray) pipeline.get("objects");
+        for (Object object : objectArray) {
+            Object type = ((JSONObject) object).get("type");
+            if (type != null && type.toString().equals("Schedule")) {
+                return (String) ((JSONObject) object).get("startDateTime");
+            }
+        }
+
+        return "";
+    }
+
     public String getJson() {
 //        ObjectMapper mapper = new ObjectMapper();
 //        try {

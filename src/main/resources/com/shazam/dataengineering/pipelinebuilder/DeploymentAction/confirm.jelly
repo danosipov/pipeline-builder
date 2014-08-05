@@ -1,0 +1,23 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+    <l:layout norefresh="true">
+        <st:include it="${it.build}" page="sidepanel.jelly"/>
+        <l:main-panel>
+            <table width="100%">
+
+                <tr><td>
+                    <f:form method="post" action="deploy">
+                        TODO List confirmation options
+                        Steps:
+                        <ol>
+                            <li>Remove pipeline ${it.pipelineToRemove}</li>
+                            <li>Create pipeline</li>
+                            <li>Upload configuration ... with start date</li>
+                            <li>Activate new pipeline</li>
+                        </ol>
+                        <f:submit value="${%Proceed}" />
+                    </f:form>
+                </td></tr>
+            </table>
+        </l:main-panel>
+    </l:layout>
+</j:jelly>
