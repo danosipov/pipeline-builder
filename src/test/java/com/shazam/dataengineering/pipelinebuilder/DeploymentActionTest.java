@@ -4,11 +4,13 @@ package com.shazam.dataengineering.pipelinebuilder;
 import com.amazonaws.auth.AnonymousAWSCredentials;
 import com.amazonaws.services.datapipeline.DataPipelineClient;
 import com.amazonaws.services.datapipeline.model.*;
+import hudson.FilePath;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Run;
 import org.junit.Test;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -63,10 +65,8 @@ public class DeploymentActionTest {
     public void createNewPipelineShouldReturnPipelineId() throws Exception {
         DataPipelineClient dataPipelineClient = mock(DataPipelineClient.class);
         DeploymentAction action = new DeploymentAction(getMockAbstractBuild(), new AnonymousAWSCredentials());
-        CreatePipelineRequest createPipelineRequest = new CreatePipelineRequest()
-                .withName("p1-test-pipeline-name-34").withDescription("");
         CreatePipelineResult createPipelineResult = new CreatePipelineResult().withPipelineId("test12345");
-        when(dataPipelineClient.createPipeline(createPipelineRequest)).thenReturn(createPipelineResult);
+        when(dataPipelineClient.createPipeline(any(CreatePipelineRequest.class))).thenReturn(createPipelineResult);
 
         Field pipelineFileField = action.getClass().getDeclaredField("pipelineFile");
         pipelineFileField.setAccessible(true);
@@ -79,6 +79,122 @@ public class DeploymentActionTest {
         assertEquals("test12345", result);
     }
 
+    @Test
+    public void validateNewPipelineShouldSaveWarningAndErrorMessages() throws Exception{
+        String pipelineId = "test1234";
+        String json = new FilePath(new File("src/test/resources/pipeline3.json")).readToString();
+        PipelineObject pipeline = new PipelineObject(json);
+
+        ValidatePipelineDefinitionRequest validationRequest = new ValidatePipelineDefinitionRequest()
+                .withPipelineId(pipelineId).withPipelineObjects(pipeline.getAWSObjects());
+        ValidatePipelineDefinitionResult validationResponse = new ValidatePipelineDefinitionResult()
+                .withValidationWarnings(
+                        new ValidationWarning().withWarnings("1", "2", "3")
+                )
+                .withValidationErrors(
+                        new ValidationError().withErrors("4", "5"),
+                        new ValidationError().withErrors("6")
+                ).withErrored(false);
+        DataPipelineClient dataPipelineClient = mock(DataPipelineClient.class);
+        when(dataPipelineClient.validatePipelineDefinition(validationRequest)).thenReturn(validationResponse);
+
+        DeploymentAction action = new DeploymentAction(getMockAbstractBuild(), new AnonymousAWSCredentials());
+
+        Field pipelineFileField = action.getClass().getDeclaredField("pipelineObject");
+        pipelineFileField.setAccessible(true);
+        pipelineFileField.set(action, pipeline);
+        Method method = action.getClass().getDeclaredMethod("validateNewPipeline", String.class, DataPipelineClient.class);
+        method.setAccessible(true);
+
+        method.invoke(action, pipelineId, dataPipelineClient);
+
+        assertEquals(7, action.getClientMessages().size());
+        assertTrue(action.getClientMessages().get(0).contains("[ERROR]"));
+        assertTrue(action.getClientMessages().get(1).contains("[ERROR]"));
+        assertTrue(action.getClientMessages().get(2).contains("[ERROR]"));
+        assertTrue(action.getClientMessages().get(3).contains("[WARN]"));
+        assertTrue(action.getClientMessages().get(4).contains("[WARN]"));
+        assertTrue(action.getClientMessages().get(5).contains("[WARN]"));
+    }
+
+    @Test(expected = InvocationTargetException.class) // Caused by a DeploymentException
+    public void validateNewPipelineShouldThrowExceptionWhenValidationFails() throws Exception {
+        String pipelineId = "test1234";
+        ArrayList<com.amazonaws.services.datapipeline.model.PipelineObject> pipelineList =
+                new ArrayList<com.amazonaws.services.datapipeline.model.PipelineObject>();
+        PipelineObject pipeline = mock(PipelineObject.class);
+        when(pipeline.getAWSObjects()).thenReturn(pipelineList);
+
+        ValidatePipelineDefinitionRequest validationRequest = new ValidatePipelineDefinitionRequest()
+                .withPipelineId(pipelineId).withPipelineObjects(pipelineList);
+        ValidatePipelineDefinitionResult validationResponse = new ValidatePipelineDefinitionResult()
+                .withValidationWarnings(
+                        new ValidationWarning().withWarnings("1", "2", "3")
+                )
+                .withValidationErrors(
+                        new ValidationError().withErrors("4", "5"),
+                        new ValidationError().withErrors("6")
+                ).withErrored(true);
+        DataPipelineClient dataPipelineClient = mock(DataPipelineClient.class);
+        when(dataPipelineClient.validatePipelineDefinition(validationRequest)).thenReturn(validationResponse);
+
+        DeploymentAction action = new DeploymentAction(getMockAbstractBuild(), new AnonymousAWSCredentials());
+
+        Field pipelineFileField = action.getClass().getDeclaredField("pipelineObject");
+        pipelineFileField.setAccessible(true);
+        pipelineFileField.set(action, pipeline);
+        Method method = action.getClass().getDeclaredMethod("validateNewPipeline", String.class, DataPipelineClient.class);
+        method.setAccessible(true);
+
+        method.invoke(action, pipelineId, dataPipelineClient);
+    }
+
+    @Test
+    public void uploadNewPipelineShouldCallPutPipeline() throws Exception {
+        String pipelineId = "test1234";
+        ArrayList<com.amazonaws.services.datapipeline.model.PipelineObject> pipelineList =
+                new ArrayList<com.amazonaws.services.datapipeline.model.PipelineObject>();
+        PipelineObject pipeline = mock(PipelineObject.class);
+        when(pipeline.getAWSObjects()).thenReturn(pipelineList);
+
+        PutPipelineDefinitionRequest putRequest = new PutPipelineDefinitionRequest()
+                .withPipelineId(pipelineId).withPipelineObjects(pipelineList);
+        PutPipelineDefinitionResult putResult = new PutPipelineDefinitionResult().withErrored(false);
+        DataPipelineClient dataPipelineClient = mock(DataPipelineClient.class);
+        when(dataPipelineClient.putPipelineDefinition(putRequest)).thenReturn(putResult);
+
+        DeploymentAction action = new DeploymentAction(getMockAbstractBuild(), new AnonymousAWSCredentials());
+
+        Field pipelineFileField = action.getClass().getDeclaredField("pipelineObject");
+        pipelineFileField.setAccessible(true);
+        pipelineFileField.set(action, pipeline);
+        Method method = action.getClass().getDeclaredMethod("uploadNewPipeline", String.class, DataPipelineClient.class);
+        method.setAccessible(true);
+
+        method.invoke(action, pipelineId, dataPipelineClient);
+
+        verify(pipeline).getAWSObjects();
+        verify(dataPipelineClient).putPipelineDefinition(any(PutPipelineDefinitionRequest.class));
+    }
+
+    @Test
+    public void activateNewPipelineShouldCallActivatePipeline() throws Exception {
+        String pipelineId = "test1234";
+        ActivatePipelineRequest activateRequest = new ActivatePipelineRequest()
+                .withPipelineId(pipelineId);
+        ActivatePipelineResult activateResult = new ActivatePipelineResult();
+        DataPipelineClient dataPipelineClient = mock(DataPipelineClient.class);
+        when(dataPipelineClient.activatePipeline(activateRequest)).thenReturn(activateResult);
+
+        DeploymentAction action = new DeploymentAction(getMockAbstractBuild(), new AnonymousAWSCredentials());
+
+        Method method = action.getClass().getDeclaredMethod("activateNewPipeline", String.class, DataPipelineClient.class);
+        method.setAccessible(true);
+
+        method.invoke(action, pipelineId, dataPipelineClient);
+
+        verify(dataPipelineClient).activatePipeline(any(ActivatePipelineRequest.class));
+    }
 
 
     private String executeGetPipelineIdMethod(String pipelineFileName)

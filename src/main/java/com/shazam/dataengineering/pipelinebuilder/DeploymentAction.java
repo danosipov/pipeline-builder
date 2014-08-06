@@ -3,9 +3,7 @@ package com.shazam.dataengineering.pipelinebuilder;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.services.datapipeline.DataPipelineClient;
-import com.amazonaws.services.datapipeline.model.DeletePipelineRequest;
-import com.amazonaws.services.datapipeline.model.ListPipelinesResult;
-import com.amazonaws.services.datapipeline.model.PipelineIdName;
+import com.amazonaws.services.datapipeline.model.*;
 import hudson.FilePath;
 import hudson.model.*;
 import net.sf.json.JSONObject;
@@ -25,6 +23,8 @@ public class DeploymentAction implements Action {
 
     private String pipelineToRemoveId;
     private String pipelineFile;
+    private PipelineObject pipelineObject;
+    private DeploymentException lastException;
     private List<String> clientMessages = new ArrayList<String>();
 
     public DeploymentAction(AbstractBuild build, AWSCredentials awsCredentials) {
@@ -59,6 +59,14 @@ public class DeploymentAction implements Action {
         return clientMessages;
     }
 
+    public String getPipelineFile() {
+        return pipelineFile;
+    }
+
+    public DeploymentException getLastException() {
+        return lastException;
+    }
+
     public List<String> getPipelines() {
         ArrayList<String> pipelines = new ArrayList<String>();
         if (artifacts != null && artifacts.size() > 0) {
@@ -75,8 +83,12 @@ public class DeploymentAction implements Action {
         PipelineObject pipelineObject = null;
         // TODO: Change based on the value of pipeline selector
         if (artifacts.size() > 0) {
-            Run.Artifact artifact = artifacts.get(0); // TODO: Remove this hack
-            pipelineObject = new PipelineObject(new FilePath(artifact.getFile()).readToString());
+            if (pipelineFile != null) {
+                pipelineObject = getPipelineByName(pipelineFile);
+            } else {
+                Run.Artifact artifact = artifacts.get(0); // TODO: Remove this hack
+                pipelineObject = new PipelineObject(new FilePath(artifact.getFile()).readToString());
+            }
         }
         if (pipelineObject != null) {
             return pipelineObject.getScheduleDate();
@@ -111,29 +123,95 @@ public class DeploymentAction implements Action {
     public void doConfirmProcess(StaplerRequest req, StaplerResponse resp) throws IOException, ServletException {
         // TODO: Process parameters, forward to confirm
         JSONObject formData = req.getSubmittedForm();
-        String pipelineName = formData.getString("pipeline");
+        pipelineFile = formData.getString("pipeline");
+        String startDate = formData.getString("scheduleDate");
+        // TODO: Validate startdate!
+
+        pipelineObject = getPipelineByName(pipelineFile);
+        if (pipelineObject == null) {
+            clientMessages.add("[ERROR] Pipeline not found");
+            resp.forward(this, "error", req);
+        } else {
+            pipelineObject.setScheduleDate(startDate);
+        }
 
         DataPipelineClient client = new DataPipelineClient(credentials);
-        pipelineToRemoveId = getPipelineId(pipelineName, client);
+        pipelineToRemoveId = getPipelineId(pipelineFile, client);
 
         resp.forward(this, "confirm", req);
     }
 
     public void doDeploy(StaplerRequest req, StaplerResponse resp) throws ServletException, IOException {
         DataPipelineClient client = new DataPipelineClient(credentials);
-        // TODO: Deployment!
         try {
             removeOldPipeline(client);
             String pipelineId = createNewPipeline(client);
-            //validateNewPipeline(pipelineId, client);
-            //uploadNewPipeline(pipelineId, client);
-            //activateNewPipeline(pipelineId, client);
-        } catch (DeploymentException e) {
-            // TODO: Render error for the user
-        } finally {
+            validateNewPipeline(pipelineId, client);
+            uploadNewPipeline(pipelineId, client);
+            activateNewPipeline(pipelineId, client);
             resp.forward(this, "report", req);
+        } catch (DeploymentException e) {
+            if (e.getCause() != null) {
+                clientMessages.add("[ERROR] " + e.getCause().getMessage());
+            }
+            resp.forward(this, "error", req);
+        }
+    }
+
+    private PipelineObject getPipelineByName(String pipelineName) throws IOException {
+        if (!pipelineName.isEmpty() && artifacts != null && artifacts.size() > 0) {
+            for (Run.Artifact artifact : artifacts) {
+                if (artifact.getFileName().equals(pipelineName)) {
+                    return new PipelineObject(new FilePath(artifact.getFile()).readToString());
+                }
+            }
         }
 
+        return null;
+    }
+
+    private void activateNewPipeline(String pipelineId, DataPipelineClient client) throws DeploymentException {
+        AWSProxy proxy = new AWSProxy(client);
+        proxy.activatePipeline(pipelineId);
+        clientMessages.add("[INFO] Pipeline has been activated!");
+    }
+
+    private void uploadNewPipeline(String pipelineId, DataPipelineClient client) throws DeploymentException {
+        AWSProxy proxy = new AWSProxy(client);
+        boolean success = proxy.putPipeline(pipelineId, pipelineObject);
+        if (!success) {
+            clientMessages.add("[ERROR] Unable to upload new pipeline definition.");
+            throw new DeploymentException();
+        } else {
+            clientMessages.add("[INFO] Upload of pipeline definition completed successfully");
+        }
+    }
+
+    private void validateNewPipeline(String pipelineId, DataPipelineClient client) throws DeploymentException {
+        AWSProxy proxy = new AWSProxy(client);
+        ValidatePipelineDefinitionResult validation = proxy.validatePipeline(pipelineId, pipelineObject);
+
+        List<ValidationError> errors = validation.getValidationErrors();
+        List<ValidationWarning> warnings = validation.getValidationWarnings();
+
+        for (ValidationError error: errors) {
+            for (String errorMessage: error.getErrors()) {
+                clientMessages.add("[ERROR] " + errorMessage);
+            }
+        }
+
+        for (ValidationWarning warning: warnings) {
+            for (String warningMessage: warning.getWarnings()) {
+                clientMessages.add("[WARN] " + warningMessage);
+            }
+        }
+
+        if (validation.isErrored()) {
+            clientMessages.add("[ERROR] Critical errors detected in validation.");
+            throw new DeploymentException();
+        } else {
+            clientMessages.add("[INFO] No critical errors for the pipeline detected in validation.");
+        }
     }
 
     private String createNewPipeline(DataPipelineClient client) throws DeploymentException {

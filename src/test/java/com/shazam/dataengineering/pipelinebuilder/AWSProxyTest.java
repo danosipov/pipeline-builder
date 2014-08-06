@@ -17,11 +17,9 @@ public class AWSProxyTest {
     @Test
     public void createPipelineShouldTriggerPipelineCreation() throws Exception {
         DataPipelineClient dataPipelineClient = mock(DataPipelineClient.class);
-        CreatePipelineRequest createPipelineRequest = new CreatePipelineRequest()
-                .withName("test").withDescription("");
         CreatePipelineResult createPipelineResult = new CreatePipelineResult()
                 .withPipelineId("pipelineId123");
-        when(dataPipelineClient.createPipeline(createPipelineRequest)).thenReturn(createPipelineResult);
+        when(dataPipelineClient.createPipeline(any(CreatePipelineRequest.class))).thenReturn(createPipelineResult);
         AWSProxy proxy = new AWSProxy(dataPipelineClient);
 
         String result = proxy.createPipeline("test");

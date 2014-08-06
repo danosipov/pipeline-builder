@@ -6,12 +6,11 @@
 
                 <tr><td>
                     <f:form method="post" action="deploy">
-                        TODO List confirmation options
-                        Steps:
+                        Steps about to be taken:
                         <ol>
                             <li>Remove pipeline ${it.pipelineToRemove}</li>
-                            <li>Create pipeline</li>
-                            <li>Upload configuration ... with start date</li>
+                            <li>Create new pipeline ${it.pipelineFile}</li>
+                            <li>Upload configuration for pipeline with start date ${it.getScheduledDate()}</li>
                             <li>Activate new pipeline</li>
                         </ol>
                         <f:submit value="${%Proceed}" />

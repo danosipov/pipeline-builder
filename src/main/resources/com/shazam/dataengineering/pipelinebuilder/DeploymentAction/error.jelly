@@ -5,8 +5,8 @@
             <table width="100%">
 
                 <tr><td>
-                    <h1>Success!</h1>
-                    Pipeline has been deployed. Here are the messages: <br/>
+                    <h1>Oops...</h1>
+                    Pipeline failed to deploy. Here are the last error messages: <br />
                     <p>
                         <j:forEach var="clientMessage" items="${it.getClientMessages()}">
                             ${clientMessage}<br />

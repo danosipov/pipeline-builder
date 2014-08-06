@@ -5,6 +5,7 @@ import com.amazonaws.services.datapipeline.DataPipelineClient;
 import com.amazonaws.services.datapipeline.model.*;
 
 import java.util.List;
+import java.util.UUID;
 
 public class AWSProxy {
     private DataPipelineClient client;
@@ -31,19 +32,45 @@ public class AWSProxy {
     public String createPipeline(String name, String description) throws DeploymentException {
         try {
             CreatePipelineRequest request = new CreatePipelineRequest()
-                    .withName(name).withDescription(description);
+                    .withName(name).withDescription(description)
+                    .withUniqueId(UUID.randomUUID().toString()); // TODO?
             CreatePipelineResult result = client.createPipeline(request);
             return result.getPipelineId();
-        } catch (AmazonClientException e) {
+        } catch (RuntimeException e) {
             throw new DeploymentException(e);
         }
     }
 
-//    public List<String> validatePipeline(String pipelineId) throws DeploymentException {
-//        ValidatePipelineDefinitionRequest request = new ValidatePipelineDefinitionRequest()
-//                .withPipelineId(pipelineId).withPipelineObjects()
-//        client.validatePipelineDefinition()
-//    }
+    public ValidatePipelineDefinitionResult validatePipeline(String pipelineId, PipelineObject pipeline)
+            throws DeploymentException {
+        try {
+            ValidatePipelineDefinitionRequest request = new ValidatePipelineDefinitionRequest()
+                    .withPipelineId(pipelineId).withPipelineObjects(pipeline.getAWSObjects());
+            return client.validatePipelineDefinition(request);
+        } catch (RuntimeException e) {
+            throw new DeploymentException(e);
+        }
+    }
+
+    public boolean putPipeline(String pipelineId, PipelineObject pipeline) throws DeploymentException {
+        try {
+            PutPipelineDefinitionRequest request = new PutPipelineDefinitionRequest()
+                    .withPipelineId(pipelineId).withPipelineObjects(pipeline.getAWSObjects());
+            PutPipelineDefinitionResult result = client.putPipelineDefinition(request);
+            return !result.isErrored();
+        } catch (RuntimeException e) {
+            throw new DeploymentException(e);
+        }
+    }
+
+    public void activatePipeline(String pipelineId) throws DeploymentException {
+        try {
+            ActivatePipelineRequest request = new ActivatePipelineRequest().withPipelineId(pipelineId);
+            client.activatePipeline(request);
+        } catch (RuntimeException e) {
+            throw new DeploymentException(e);
+        }
+    }
 
     public String getPipelineId(String nameRegex) {
         ListPipelinesResult pipelineList = client.listPipelines();
