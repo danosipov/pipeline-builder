@@ -1,0 +1,118 @@
+package com.shazam.dataengineering.pipelinebuilder;
+
+
+import com.amazonaws.auth.AnonymousAWSCredentials;
+import com.amazonaws.services.datapipeline.DataPipelineClient;
+import com.amazonaws.services.datapipeline.model.*;
+import hudson.model.AbstractBuild;
+import hudson.model.AbstractProject;
+import hudson.model.Run;
+import org.junit.Test;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+/**
+ * Test suite for the DeploymentAction class.
+ *
+ * Tests a lot of private methods, which is a bad practice, but
+ * necessary to inject a mocked AWS client in this case, as well
+ * as testing individual deployment pieces rather than walking
+ * through the whole deployment in one step.
+ */
+public class DeploymentActionTest {
+    @Test
+    public void getPipelineIdShouldReturnCorrectPipeline() throws Exception {
+        String result = executeGetPipelineIdMethod("p1-this-is-a-test-pipeline-2");
+
+        assertEquals("test1", result);
+    }
+
+    @Test
+    public void getPipelineIdShouldReturnEmptyId() throws Exception {
+        String result = executeGetPipelineIdMethod("p1-this-is-another-pipeline-2");
+
+        assertEquals("", result);
+    }
+    
+    @Test
+    public void removeOldPipelineShouldGenerateInfoMessagesForSuccess() throws Exception {
+        DataPipelineClient dataPipelineClient = mock(DataPipelineClient.class);
+        DeploymentAction action = new DeploymentAction(getMockAbstractBuild(), new AnonymousAWSCredentials());
+        DeletePipelineRequest request = new DeletePipelineRequest().withPipelineId("test");
+
+        Field pipelineIdField = action.getClass().getDeclaredField("pipelineToRemoveId");
+        pipelineIdField.setAccessible(true);
+        pipelineIdField.set(action, "test");
+        Method method = action.getClass().getDeclaredMethod("removeOldPipeline", DataPipelineClient.class);
+        method.setAccessible(true);
+
+        method.invoke(action, dataPipelineClient);
+        verify(dataPipelineClient).deletePipeline(request);
+        assertTrue(action.getClientMessages().get(0).contains("[INFO]"));
+        assertFalse(action.getClientMessages().get(0).contains("[WARN]"));
+    }
+
+    @Test
+    public void createNewPipelineShouldReturnPipelineId() throws Exception {
+        DataPipelineClient dataPipelineClient = mock(DataPipelineClient.class);
+        DeploymentAction action = new DeploymentAction(getMockAbstractBuild(), new AnonymousAWSCredentials());
+        CreatePipelineRequest createPipelineRequest = new CreatePipelineRequest()
+                .withName("p1-test-pipeline-name-34").withDescription("");
+        CreatePipelineResult createPipelineResult = new CreatePipelineResult().withPipelineId("test12345");
+        when(dataPipelineClient.createPipeline(createPipelineRequest)).thenReturn(createPipelineResult);
+
+        Field pipelineFileField = action.getClass().getDeclaredField("pipelineFile");
+        pipelineFileField.setAccessible(true);
+        pipelineFileField.set(action, "p1-test-pipeline-name-34.json");
+        Method method = action.getClass().getDeclaredMethod("createNewPipeline", DataPipelineClient.class);
+        method.setAccessible(true);
+
+        String result = (String) method.invoke(action, dataPipelineClient);
+
+        assertEquals("test12345", result);
+    }
+
+
+
+    private String executeGetPipelineIdMethod(String pipelineFileName)
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        List<PipelineIdName> pipelineList = new ArrayList<PipelineIdName>();
+        pipelineList.add(new PipelineIdName().withId("test1").withName("p1-this-is-a-test-pipeline-1"));
+        pipelineList.add(new PipelineIdName().withId("test2").withName("d2-this-is-a-test-pipeline-1"));
+        DeploymentAction action = new DeploymentAction(getMockAbstractBuild(), new AnonymousAWSCredentials());
+        DataPipelineClient client = getMockDataPipelineClient(pipelineList);
+
+        Method method = action.getClass().getDeclaredMethod("getPipelineId", String.class, DataPipelineClient.class);
+        method.setAccessible(true);
+
+        return (String) method.invoke(action, pipelineFileName, client);
+    }
+
+    private DataPipelineClient getMockDataPipelineClient(List<PipelineIdName> pipelineList) {
+        ListPipelinesResult listPipelinesResult = mock(ListPipelinesResult.class);
+        DataPipelineClient dataPipelineClient = mock(DataPipelineClient.class);
+
+        when(dataPipelineClient.listPipelines()).thenReturn(listPipelinesResult);
+        when(listPipelinesResult.getPipelineIdList()).thenReturn(pipelineList);
+
+        return dataPipelineClient;
+    }
+
+    private AbstractBuild getMockAbstractBuild() {
+        AbstractBuild build = mock(AbstractBuild.class);
+        AbstractProject project = mock(AbstractProject.class);
+
+        when(build.getProject()).thenReturn(project);
+        when(project.getName()).thenReturn("test");
+        when(build.getArtifacts()).thenReturn(new ArrayList< Run.Artifact>());
+
+        return build;
+    }
+}

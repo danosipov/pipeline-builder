@@ -1,83 +1,90 @@
 {
   "objects": [
     {
-      "id": "RedshiftDatabaseId_atp",
-      "username": "awsdata",
-      "name": "Audience Targetting Database",
-      "*password": "Itsallaboutthedata1",
+      "id": "RedshiftDatabaseId_123",
+      "username": "username",
+      "name": "Database",
+      "*password": "password",
       "type": "RedshiftDatabase",
-      "clusterId": "audience-targeting"
+      "clusterId": "cluster"
     },
     {
-      "id": "RedshiftDatabaseId_adp",
-      "username": "awsdata",
-      "name": "Audience DB Production Database",
-      "*password": "Itsallaboutthedata1",
-      "type": "RedshiftDatabase",
-      "clusterId": "audience-db-production"
-    },
-    {
-      "id": "RedshiftDatabaseId_sdw",
-      "username": "awsdata",
-      "name": "Shazam DW Database",
-      "*password": "Itsallaboutthedata1",
-      "type": "RedshiftDatabase",
-      "clusterId": "shazam-dw"
-    },
-    {
-      "id": "ScheduleId_Pjei4",
+      "id": "ScheduleId_234",
       "startDateTime": "2014-07-29T15:00:00",
       "name": "Daily",
       "type": "Schedule",
       "period": "1 Day"
     },
     {
-      "id": "ActivityId_32rpj",
+      "id": "ActivityId_345",
       "schedule": {
-        "ref": "ScheduleId_Pjei4"
+        "ref": "ScheduleId_234"
       },
-      "name": "UNLOAD the DB",
+      "name": "EMR Job",
       "runsOn": {
-        "ref": "Ec2Resource_z0jF4"
+        "ref": "EmrClusterId_678"
+      },
+      "onFail": {
+        "ref": "ActionId_098"
+      },
+      "type": "EmrActivity",
+      "step": [
+        "s3://us-east-1.elasticmapreduce/libs/script-runner/script-runner.jar,s3://us-east-1.elasticmapreduce/libs/pig/pig-script,--base-path,s3://us-east-1.elasticmapreduce/libs/pig/,--install-pig,--pig-versions,latest",
+        "s3://us-east-1.elasticmapreduce/libs/script-runner/script-runner.jar,s3://us-east-1.elasticmapreduce/libs/pig/pig-script,--base-path,s3://us-east-1.elasticmapreduce/libs/pig/,--pig-versions,latest,--run-pig-script,--args,-f,s3://bucket/script.pig,-p,PARALLEL=10,-p,INPUT=s3://bucket/year=#{format(minusDays(@scheduledStartTime,1),'YYYY')}/month=#{format(minusDays(@scheduledStartTime,1),'MM')}/day=#{format(minusDays(@scheduledStartTime,1),'dd')}/*,-p,OUTPUT=s3://bucket/output/#{format(minusDays(@scheduledStartTime,1),'YYYY-MM-dd')}"
+      ]
+    },
+    {
+      "id": "ActivityId_456",
+      "schedule": {
+        "ref": "ScheduleId_234"
+      },
+      "name": "SQL Query",
+      "runsOn": {
+        "ref": "Ec2Resource_678"
       },
       "maximumRetries": "0",
       "onFail": {
-        "ref": "ActionId_okp3f"
+        "ref": "ActionId_098"
       },
       "type": "SqlActivity",
-      "script": "UNLOAD('SELECT * FROM accounts') TO 's3://data-engineering-team-bucket/production/accountsclone/#{format(@scheduledStartTime,'YYYY-MM-dd')}/' credentials 'aws_access_key_id=AKIAJGP63MW3DFBAPIKQ;aws_secret_access_key=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' delimiter '\t';",
+      "script": "SELECT 1;",
       "database": {
-        "ref": "RedshiftDatabaseId_adp"
+        "ref": "RedshiftDatabaseId_123"
       }
     },
     {
-      "id": "ActivityId_oPj35",
+      "id": "ActivityId_567",
       "schedule": {
-        "ref": "ScheduleId_Pjei4"
+        "ref": "ScheduleId_234"
       },
-      "name": "Copy Accounts table to Shazam DW",
+      "name": "SQL Query 2",
       "runsOn": {
-        "ref": "Ec2Resource_z0jF4"
+        "ref": "Ec2Resource_678"
       },
       "maximumRetries": "0",
       "onFail": {
-        "ref": "ActionId_okp3f"
+        "ref": "ActionId_098"
       },
       "type": "SqlActivity",
-      "script": "CREATE TABLE accounts_clone (installationid varchar(60) encode lzo,accountid char(36) encode lzo,androidid varchar(32) encode lzo,anid2 char(44) encode lzo,channel varchar(255) encode lzo,country char(2) encode bytedict,model varchar(100) encode lzo,duid varchar(150) encode lzo,facebookappuserid char(152) encode lzo,flavour varchar(10) encode lzo,idfa char(36) encode lzo,imei varchar(20) encode lzo,imsi varchar(20) encode lzo,language varchar(20) encode bytedict,osname varchar(20) encode bytedict,osversion varchar(20) encode bytedict, platform varchar(20) encode bytedict,appversion varchar(10) encode bytedict,creationdate timestamp encode delta,lastmodifieddate timestamp encode delta,newsfeedenabled boolean)distkey(accountid) sortkey(accountid);COPY accounts_clone FROM 's3://data-engineering-team-bucket/production/accountsclone/#{format(@scheduledStartTime,\"YYYY-MM-dd\")}/' CREDENTIALS 'aws_access_key_id=AKIAJWZPAGLR6TV7N7KA;aws_secret_access_key=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' delimiter '\t' COMPROWS 100000000 MAXERROR 100 TRUNCATECOLUMNS EMPTYASNULL BLANKSASNULL;DROP VIEW reporting.accounts;DROP TABLE accounts;ALTER TABLE accounts_clone RENAME TO accounts;CREATE VIEW reporting.accounts AS SELECT accountid, installationid, idfa, androidid, country, language, platform, appversion, osversion, model FROM accounts;",
-      "dependsOn": {
-        "ref": "ActivityId_32rpj"
-      },
+      "script": "SELECT 2;",
+      "dependsOn": [
+        {
+            "ref": "ActivityId_345"
+        },
+        {
+            "ref": "ActivityId_456"
+        }
+      ],
       "database": {
-        "ref": "RedshiftDatabaseId_sdw"
+        "ref": "RedshiftDatabaseId_123"
       }
     },
     {
-      "id": "ActionId_okp3f",
-      "message": "Accounts DB Clone failed.",
-      "subject": "Data Pipeline Error",
-      "name": "Accounts DB Clone Failed",
-      "topicArn": "arn:aws:sns:us-east-1:784428439351:data_pipeline__accounts_clone",
+      "id": "ActionId_098",
+      "message": "Fail Message",
+      "subject": "Error",
+      "name": "SNS Alert",
+      "topicArn": "arn:aws:sns:us-east-1:sns_feed",
       "role": "DataPipelineDefaultRole",
       "type": "SnsAlarm"
     },
@@ -90,23 +97,24 @@
       "resourceRole": "DataPipelineDefaultResourceRole"
     },
     {
-      "id": "Ec2Resource_z0jF4",
-      "type": "Ec2Resource",
-      "actionOnTaskFailure": "terminate",
-      "terminateAfter": "5 Hours",
-      "actionOnResourceFailure": "retryAll",
-      "maximumRetries": "3",
-      "role": "DataPipelineDefaultRole",
-      "resourceRole": "DataPipelineDefaultResourceRole",
-      "instanceType": "m1.small",
-      "securityGroups": [
-        "default"
-      ],
+      "terminateAfter": "10 Hours",
+      "id": "EmrClusterId_678",
+      "region": "us-east-1",
+      "emrLogUri": "s3://bucket/",
+      "keyPair": "mykeypair",
       "schedule": {
-        "ref": "ScheduleId_Pjei4"
+        "ref": "ScheduleId_234"
       },
-      "logUri": "s3://data-engineering-team-bucket/adptasklogs",
-      "keyPair": "dataengineeringkeypair"
+      "bootstrapAction": [
+        "s3://bucket/bootstrap-script.sh"
+      ],
+      "masterInstanceType": "m1.small",
+      "coreInstanceType": "m1.small",
+      "enableDebugging": "true",
+      "name": "DefaultEmrCluster1",
+      "coreInstanceCount": "1",
+      "logUri": "s3://bucket/tasklogs",
+      "type": "EmrCluster"
     }
   ]
 }

@@ -1,27 +1,21 @@
 package com.shazam.dataengineering.pipelinebuilder;
 
+import com.amazonaws.AmazonClientException;
 import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.datapipeline.DataPipelineClient;
-import com.amazonaws.services.datapipeline.model.CreatePipelineRequest;
-import com.amazonaws.services.datapipeline.model.ListPipelinesRequest;
+import com.amazonaws.services.datapipeline.model.DeletePipelineRequest;
 import com.amazonaws.services.datapipeline.model.ListPipelinesResult;
 import com.amazonaws.services.datapipeline.model.PipelineIdName;
 import hudson.FilePath;
 import hudson.model.*;
-import hudson.util.ListBoxModel;
 import net.sf.json.JSONObject;
-import org.kohsuke.stapler.RequestImpl;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
 
 public class DeploymentAction implements Action {
     private AbstractProject project;
@@ -31,6 +25,7 @@ public class DeploymentAction implements Action {
 
     private String pipelineToRemoveId;
     private String pipelineFile;
+    private List<String> clientMessages = new ArrayList<String>();
 
     public DeploymentAction(AbstractBuild build, AWSCredentials awsCredentials) {
         this.project = build.getProject();
@@ -58,6 +53,10 @@ public class DeploymentAction implements Action {
 
     public String getPipelineToRemoveId() {
         return pipelineToRemoveId;
+    }
+
+    public List<String> getClientMessages() {
+        return clientMessages;
     }
 
     public List<String> getPipelines() {
@@ -120,30 +119,47 @@ public class DeploymentAction implements Action {
         resp.forward(this, "confirm", req);
     }
 
-    public void doDeploy(StaplerRequest req, StaplerResponse resp) {
+    public void doDeploy(StaplerRequest req, StaplerResponse resp) throws ServletException, IOException {
         DataPipelineClient client = new DataPipelineClient(credentials);
         // TODO: Deployment!
-//        try {
-//            removeOldPipeline();
-//            String pipelineId = createNewPipeline(client);
-//            validateNewPipeline(pipelineId, client);
-//            uploadNewPipeline(pipelineId, client);
-//            activateNewPipeline(pipelineId, client);
-//        } catch (DeploymentException e) {
-//            // TODO: Render error for the user
-//        }
+        try {
+            removeOldPipeline(client);
+            String pipelineId = createNewPipeline(client);
+            //validateNewPipeline(pipelineId, client);
+            //uploadNewPipeline(pipelineId, client);
+            //activateNewPipeline(pipelineId, client);
+        } catch (DeploymentException e) {
+            // TODO: Render error for the user
+        } finally {
+            resp.forward(this, "report", req);
+        }
+
+    }
+
+    private String createNewPipeline(DataPipelineClient client) throws DeploymentException {
+        String pipelineName = pipelineFile.substring(0, pipelineFile.lastIndexOf(".json"));
+        AWSProxy proxy = new AWSProxy(client);
+        return proxy.createPipeline(pipelineName);
+    }
+
+    private void removeOldPipeline(DataPipelineClient client) throws DeploymentException {
+        if (pipelineToRemoveId == null || !pipelineToRemoveId.isEmpty()) {
+            AWSProxy proxy = new AWSProxy(client);
+            boolean result = proxy.removePipeline(pipelineToRemoveId);
+
+            if (result) {
+                clientMessages.add("[INFO] Successfully removed pipeline " + pipelineToRemoveId);
+            } else {
+                clientMessages.add("[WARN] Failed to remove pipeline " + pipelineToRemoveId);
+            }
+        } else {
+            clientMessages.add("[INFO] No old pipeline to remove");
+        }
     }
 
     private String getPipelineId(String pipelineName, DataPipelineClient client) {
         String pipelineRegex = pipelineName.substring(0, pipelineName.lastIndexOf("-")) + "-\\d+";
-
-        ListPipelinesResult pipelineList = client.listPipelines();
-        for (PipelineIdName pipeline: pipelineList.getPipelineIdList()) {
-            if (pipeline.getName().matches(pipelineRegex)) {
-                return pipeline.getId();
-            }
-        }
-
-        return "";
+        AWSProxy proxy = new AWSProxy(client);
+        return proxy.getPipelineId(pipelineRegex);
     }
 }
