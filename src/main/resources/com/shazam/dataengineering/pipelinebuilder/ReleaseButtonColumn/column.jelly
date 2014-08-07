@@ -1,8 +1,8 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:i="jelly:fmt">
     <td>
         <j:if test="${job.buildable and job.hasPermission(hudson.plugins.release.ReleaseWrapper.RELEASE_PERMISSION) and it.isReleaseConfigured(job)}">
-            <a href="${jobBaseUrl}${job.shortUrl}release">
-                <img src="${imagesURL}/${subIconSize}/package.png"
+            <a href="${jobBaseUrl}${job.shortUrl}pipeline">
+                <img src="/plugin/pipeline-builder/icons/pipeline-32x32.png"
                      title="${%Deploy AWS Pipeline}" alt="${%Deploy AWS Pipeline}"
                      border="0"/>
             </a>
