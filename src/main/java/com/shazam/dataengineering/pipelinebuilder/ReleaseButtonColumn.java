@@ -11,7 +11,7 @@ public class ReleaseButtonColumn extends ListViewColumn {
     public ReleaseButtonColumn() {
     }
 
-    public boolean isReleaseConfigured(Job job) {
+    public boolean isDeployConfigured(Job job) {
         // TODO
         return true;
     }

@@ -1,11 +1,15 @@
 package com.shazam.dataengineering.pipelinebuilder;
 
-import com.amazonaws.AmazonClientException;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.services.datapipeline.DataPipelineClient;
-import com.amazonaws.services.datapipeline.model.*;
+import com.amazonaws.services.datapipeline.model.ValidatePipelineDefinitionResult;
+import com.amazonaws.services.datapipeline.model.ValidationError;
+import com.amazonaws.services.datapipeline.model.ValidationWarning;
 import hudson.FilePath;
-import hudson.model.*;
+import hudson.model.AbstractBuild;
+import hudson.model.AbstractProject;
+import hudson.model.Action;
+import hudson.model.Run;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
@@ -177,14 +181,14 @@ public class DeploymentAction implements Action {
         List<ValidationError> errors = validation.getValidationErrors();
         List<ValidationWarning> warnings = validation.getValidationWarnings();
 
-        for (ValidationError error: errors) {
-            for (String errorMessage: error.getErrors()) {
+        for (ValidationError error : errors) {
+            for (String errorMessage : error.getErrors()) {
                 clientMessages.add("[ERROR] " + errorMessage);
             }
         }
 
-        for (ValidationWarning warning: warnings) {
-            for (String warningMessage: warning.getWarnings()) {
+        for (ValidationWarning warning : warnings) {
+            for (String warningMessage : warning.getWarnings()) {
                 clientMessages.add("[WARN] " + warningMessage);
             }
         }

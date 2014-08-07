@@ -4,7 +4,6 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.datapipeline.DataPipelineClient;
 import com.amazonaws.services.datapipeline.model.*;
 
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -88,7 +87,7 @@ public class AWSProxy {
             }
 
             ListPipelinesResult pipelineList = client.listPipelines(request);
-            for (PipelineIdName pipeline: pipelineList.getPipelineIdList()) {
+            for (PipelineIdName pipeline : pipelineList.getPipelineIdList()) {
                 if (pipeline.getName().matches(nameRegex)) {
                     return pipeline.getId();
                 }

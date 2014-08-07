@@ -6,6 +6,9 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.*;
+import hudson.security.Permission;
+import hudson.security.PermissionGroup;
+import hudson.security.PermissionScope;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.tasks.Recorder;
@@ -26,6 +29,19 @@ public class PipelineBuilder extends Builder {
 
     private static ProductionEnvironment productionEnvironment = new ProductionEnvironment("Production");
     private static DevelopmentEnvironment developmentEnvironment = new DevelopmentEnvironment("Development");
+
+    public static final PermissionGroup PERMISSIONS = new PermissionGroup(
+            PipelineBuilder.class, Messages._PipelineBuilder_PermissionsTitle());
+
+    /**
+     * Permission to trigger pipeline deploys.
+     */
+    public static final Permission DEPLOY_PERMISSION = new Permission(
+            PERMISSIONS,
+            "Deploy",
+            Messages._PipelineBuilder_DeployPermission_Description(),
+            null,
+            PermissionScope.ITEM);
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
@@ -87,17 +103,16 @@ public class PipelineBuilder extends Builder {
     /**
      * Descriptor for {@link PipelineBuilder}. Used as a singleton.
      * The class is marked as public so that it can be accessed from views.
-     *
+     * <p/>
      * TODO: For global parameters
-     *
      */
     @Extension // This indicates to Jenkins that this is an implementation of an extension point.
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
         /**
          * To persist global configuration information,
          * simply store it in a field and call save().
-         *
-         * <p>
+         * <p/>
+         * <p/>
          * If you don't want fields to be persisted, use <tt>transient</tt>.
          */
         public String accessId;
@@ -112,36 +127,17 @@ public class PipelineBuilder extends Builder {
         }
 
         /**
-         * Performs on-the-fly validation of the form field 'name'.
+         * Populates the "Add configuration" button with choices for environments
          *
-         * @param value
-         *      This parameter receives the value that the user has typed.
+         * @param project Instance
          * @return
-         *      Indicates the outcome of the validation. This is sent to the browser.
-         *      <p>
-         *      Note that returning {@link hudson.util.FormValidation#error(String)} does not
-         *      prevent the form from being saved. It just means that a message
-         *      will be displayed to the user.
          */
-        public FormValidation doCheckName(@QueryParameter String value)
-                throws IOException, ServletException {
-//            if (value.length() == 0)
-//                return FormValidation.error("Please set a name");
-//            if (value.length() < 4)
-//                return FormValidation.warning("Isn't the name too short?");
-            return FormValidation.ok();
+        public static List<Descriptor<Environment>> getEnvironmentDescriptions(AbstractProject<?, ?> project) {
+            ArrayList<Descriptor<Environment>> descriptors = new ArrayList<Descriptor<Environment>>();
+            descriptors.add(productionEnvironment.getDescriptor());
+            descriptors.add(developmentEnvironment.getDescriptor());
+            return descriptors;
         }
-
-        // TODO: No path to workspace, can't verify
-//        public FormValidation doCheckFilePath(@QueryParameter String value)
-//                throws IOException, ServletException, InterruptedException {
-//            FilePath path = new FilePath(new File(value));
-//            if (!path.exists()) {
-//                return FormValidation.error("Defined file doesn't exist");
-//            } else {
-//                return FormValidation.ok();
-//            }
-//        }
 
         public boolean isApplicable(Class<? extends AbstractProject> aClass) {
             // Indicates that this builder can be used with all kinds of project types
@@ -165,21 +161,7 @@ public class PipelineBuilder extends Builder {
             // ^Can also use req.bindJSON(this, formData);
             //  (easier when there are many fields; need set* methods for this, like setUseFrench)
             save();
-            return super.configure(req,formData);
-        }
-
-
-        /**
-         * Populates the "Add configuration" button with choices for environments
-         *
-         * @param project   Instance
-         * @return
-         */
-        public static List<Descriptor<Environment>> getEnvironmentDescriptions(AbstractProject<?,?> project) {
-            ArrayList<Descriptor<Environment>> descriptors = new ArrayList<Descriptor<Environment>>();
-            descriptors.add(productionEnvironment.getDescriptor());
-            descriptors.add(developmentEnvironment.getDescriptor());
-            return descriptors;
+            return super.configure(req, formData);
         }
 
         public String getAccessId() {

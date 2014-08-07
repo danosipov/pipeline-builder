@@ -2,6 +2,6 @@
          xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form"
          xmlns:i="jelly:fmt" xmlns:p="/lib/hudson/project">
     <f:block>
-        <p>${%This column shows a release button.}</p>
+        <p>${%This column shows a pipeline deploy button.}</p>
     </f:block>
 </j:jelly>
