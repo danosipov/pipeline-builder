@@ -59,7 +59,39 @@ public class AWSProxyTest {
     }
 
     @Test
-    public void getPipelineIdShouldReturnEmptyId() throws Exception {
+    public void getPipelineIdShouldReturnCorrectPipelineFromSecondResultPage() throws Exception {
+        List<PipelineIdName> pipelineList1 = new ArrayList<PipelineIdName>();
+        pipelineList1.add(new PipelineIdName().withId("test1").withName("p1-this-is-a-test-pipeline-1"));
+        pipelineList1.add(new PipelineIdName().withId("test2").withName("d2-this-is-a-test-pipeline-1"));
+        List<PipelineIdName> pipelineList2 = new ArrayList<PipelineIdName>();
+        pipelineList2.add(new PipelineIdName().withId("test3").withName("p1-test-pipeline-2"));
+        pipelineList2.add(new PipelineIdName().withId("test4").withName("d2-test-pipeline-2"));
+
+        ListPipelinesResult listPipelinesResult1 = Mockito.mock(ListPipelinesResult.class);
+        Mockito.when(listPipelinesResult1.getPipelineIdList()).thenReturn(pipelineList1);
+        Mockito.when(listPipelinesResult1.getHasMoreResults()).thenReturn(true);
+        Mockito.when(listPipelinesResult1.getMarker()).thenReturn("testMarker");
+        ListPipelinesResult listPipelinesResult2 = Mockito.mock(ListPipelinesResult.class);
+        Mockito.when(listPipelinesResult2.getPipelineIdList()).thenReturn(pipelineList2);
+        Mockito.when(listPipelinesResult2.getHasMoreResults()).thenReturn(false);
+        DataPipelineClient dataPipelineClient = Mockito.mock(DataPipelineClient.class);
+
+        ListPipelinesRequest request1 = new ListPipelinesRequest();
+        ListPipelinesRequest request2 = new ListPipelinesRequest().withMarker("testMarker");
+        Mockito.when(dataPipelineClient.listPipelines(request1))
+                .thenReturn(listPipelinesResult1);
+        Mockito.when(dataPipelineClient.listPipelines(request2))
+                .thenReturn(listPipelinesResult2);
+
+        AWSProxy proxy = new AWSProxy(dataPipelineClient);
+
+        String result = proxy.getPipelineId(("p1-test-pipeline-\\d+"));
+
+        assertEquals("test3", result);
+    }
+
+    @Test
+    public void getPipelineIdShouldReturnEmptyIdForMissingPipeline() throws Exception {
         String result = executeGetPipelineIdMethod("p1-this-is-another-pipeline");
 
         assertEquals("", result);
@@ -68,7 +100,7 @@ public class AWSProxyTest {
 
 
     private String executeGetPipelineIdMethod(String regex)
-            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, DeploymentException {
         List<PipelineIdName> pipelineList = new ArrayList<PipelineIdName>();
         pipelineList.add(new PipelineIdName().withId("test1").withName("p1-this-is-a-test-pipeline-1"));
         pipelineList.add(new PipelineIdName().withId("test2").withName("d2-this-is-a-test-pipeline-1"));
@@ -82,7 +114,8 @@ public class AWSProxyTest {
         ListPipelinesResult listPipelinesResult = Mockito.mock(ListPipelinesResult.class);
         DataPipelineClient dataPipelineClient = Mockito.mock(DataPipelineClient.class);
 
-        Mockito.when(dataPipelineClient.listPipelines()).thenReturn(listPipelinesResult);
+        Mockito.when(dataPipelineClient.listPipelines(any(ListPipelinesRequest.class)))
+                .thenReturn(listPipelinesResult);
         Mockito.when(listPipelinesResult.getPipelineIdList()).thenReturn(pipelineList);
 
         return dataPipelineClient;

@@ -8,9 +8,9 @@
                     <f:form method="post" action="deploy">
                         Steps about to be taken:
                         <ol>
-                            <li>Remove pipeline ${it.pipelineToRemove}</li>
                             <li>Create new pipeline ${it.pipelineFile}</li>
-                            <li>Upload configuration for pipeline with start date ${it.getScheduledDate()}</li>
+                            <li>Upload configuration for pipeline with start date ${it.scheduledDate}</li>
+                            <li>Remove old pipeline ${it.pipelineToRemoveId}, if exists</li>
                             <li>Activate new pipeline</li>
                         </ol>
                         <f:submit value="${%Proceed}" />

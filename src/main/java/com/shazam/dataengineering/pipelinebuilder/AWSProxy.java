@@ -7,6 +7,10 @@ import com.amazonaws.services.datapipeline.model.*;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Proxy class for the AWS SDK
+ * Simplifies most of the interactions, wraps exceptions, helps in testing.
+ */
 public class AWSProxy {
     private DataPipelineClient client;
 
@@ -33,7 +37,7 @@ public class AWSProxy {
         try {
             CreatePipelineRequest request = new CreatePipelineRequest()
                     .withName(name).withDescription(description)
-                    .withUniqueId(UUID.randomUUID().toString()); // TODO?
+                    .withUniqueId(UUID.randomUUID().toString()); // TODO persist through retries?
             CreatePipelineResult result = client.createPipeline(request);
             return result.getPipelineId();
         } catch (RuntimeException e) {
@@ -72,15 +76,32 @@ public class AWSProxy {
         }
     }
 
-    public String getPipelineId(String nameRegex) {
-        ListPipelinesResult pipelineList = client.listPipelines();
-        for (PipelineIdName pipeline: pipelineList.getPipelineIdList()) {
-            if (pipeline.getName().matches(nameRegex)) {
-                return pipeline.getId();
-            }
-        }
+    public String getPipelineId(String nameRegex) throws DeploymentException {
+        return getPipelineId(nameRegex, null);
+    }
 
-        return "";
+    public String getPipelineId(String nameRegex, String marker) throws DeploymentException {
+        try {
+            ListPipelinesRequest request = new ListPipelinesRequest();
+            if (marker != null) {
+                request.setMarker(marker);
+            }
+
+            ListPipelinesResult pipelineList = client.listPipelines(request);
+            for (PipelineIdName pipeline: pipelineList.getPipelineIdList()) {
+                if (pipeline.getName().matches(nameRegex)) {
+                    return pipeline.getId();
+                }
+            }
+
+            if (pipelineList.getHasMoreResults()) {
+                return getPipelineId(nameRegex, pipelineList.getMarker());
+            } else {
+                return "";
+            }
+        } catch (RuntimeException e) {
+            throw new DeploymentException(e);
+        }
     }
 
 }

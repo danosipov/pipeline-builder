@@ -215,7 +215,7 @@ public class DeploymentActionTest {
         ListPipelinesResult listPipelinesResult = mock(ListPipelinesResult.class);
         DataPipelineClient dataPipelineClient = mock(DataPipelineClient.class);
 
-        when(dataPipelineClient.listPipelines()).thenReturn(listPipelinesResult);
+        when(dataPipelineClient.listPipelines(any(ListPipelinesRequest.class))).thenReturn(listPipelinesResult);
         when(listPipelinesResult.getPipelineIdList()).thenReturn(pipelineList);
 
         return dataPipelineClient;

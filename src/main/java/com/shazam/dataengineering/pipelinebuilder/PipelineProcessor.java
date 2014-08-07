@@ -122,12 +122,13 @@ public class PipelineProcessor {
         return json;
     }
 
+    // TODO Test
     private Map<String, String> getSubstitutionMap(Environment environment) {
         HashMap<String, String> substitutions = new HashMap<String, String>();
         String params = environment.getConfigParam();
         String[] lines = params.split("\\n");
         for (String kv: lines) {
-            String[] keyAndValue = kv.split(":");
+            String[] keyAndValue = kv.split(":", 2);
             if (keyAndValue.length == 2) {
                 String key = keyAndValue[0].trim();
                 String value = keyAndValue[1].trim();

@@ -35,8 +35,7 @@ public class DeploymentAction implements Action {
     }
 
     public String getIconFileName() {
-        // TODO
-        return "";
+        return "/plugin/pipeline-builder/icons/pipeline-22x22.png";
     }
 
     public String getDisplayName() {
@@ -67,6 +66,7 @@ public class DeploymentAction implements Action {
         return lastException;
     }
 
+    // TODO: RunOnce
     public List<String> getPipelines() {
         ArrayList<String> pipelines = new ArrayList<String>();
         if (artifacts != null && artifacts.size() > 0) {
@@ -79,10 +79,11 @@ public class DeploymentAction implements Action {
         return pipelines;
     }
 
+    // TODO: Multiple schedule objects per pipeline
     public String getScheduledDate() throws IOException {
-        PipelineObject pipelineObject = null;
+        PipelineObject pipelineObject = this.pipelineObject;
         // TODO: Change based on the value of pipeline selector
-        if (artifacts.size() > 0) {
+        if (pipelineObject == null && artifacts.size() > 0) {
             if (pipelineFile != null) {
                 pipelineObject = getPipelineByName(pipelineFile);
             } else {
@@ -95,29 +96,6 @@ public class DeploymentAction implements Action {
         } else {
             return "";
         }
-    }
-
-    public void doSubmit(StaplerRequest req, StaplerResponse resp) throws IOException, ServletException {
-
-        // TODO: Process, display confirmation
-        if (req.getAttribute("confirmation") == null) {
-            JSONObject formData = req.getSubmittedForm();
-            pipelineFile = formData.getString("pipeline");
-
-            DataPipelineClient client = new DataPipelineClient(credentials);
-
-            // TODO: check what step we're on
-
-            req.setAttribute("confirmation", false);
-            req.setAttribute("remove-pipeline-id", getPipelineId(pipelineFile, client));
-
-            resp.forward(build, "pipeline", req);
-        } else if (!((Boolean) req.getAttribute("confirmation"))) {
-            // TODO: Show confirmation page
-        } else {
-            // TODO: Perform actions
-        }
-
     }
 
     public void doConfirmProcess(StaplerRequest req, StaplerResponse resp) throws IOException, ServletException {
@@ -135,8 +113,12 @@ public class DeploymentAction implements Action {
             pipelineObject.setScheduleDate(startDate);
         }
 
-        DataPipelineClient client = new DataPipelineClient(credentials);
-        pipelineToRemoveId = getPipelineId(pipelineFile, client);
+        try {
+            DataPipelineClient client = new DataPipelineClient(credentials);
+            pipelineToRemoveId = getPipelineId(pipelineFile, client);
+        } catch (DeploymentException e) {
+            pipelineToRemoveId = "";
+        }
 
         resp.forward(this, "confirm", req);
     }
@@ -144,10 +126,11 @@ public class DeploymentAction implements Action {
     public void doDeploy(StaplerRequest req, StaplerResponse resp) throws ServletException, IOException {
         DataPipelineClient client = new DataPipelineClient(credentials);
         try {
-            removeOldPipeline(client);
+            // TODO: Deploy scripts
             String pipelineId = createNewPipeline(client);
             validateNewPipeline(pipelineId, client);
             uploadNewPipeline(pipelineId, client);
+            removeOldPipeline(client);
             activateNewPipeline(pipelineId, client);
             resp.forward(this, "report", req);
         } catch (DeploymentException e) {
@@ -235,7 +218,7 @@ public class DeploymentAction implements Action {
         }
     }
 
-    private String getPipelineId(String pipelineName, DataPipelineClient client) {
+    private String getPipelineId(String pipelineName, DataPipelineClient client) throws DeploymentException {
         String pipelineRegex = pipelineName.substring(0, pipelineName.lastIndexOf("-")) + "-\\d+";
         AWSProxy proxy = new AWSProxy(client);
         return proxy.getPipelineId(pipelineRegex);
