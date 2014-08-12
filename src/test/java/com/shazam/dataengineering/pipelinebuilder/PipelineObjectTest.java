@@ -32,7 +32,7 @@ public class PipelineObjectTest {
         PipelineObject reparsed = new PipelineObject(generatedJson);
 
         assertTrue(reparsed.isValid());
-        JSONAssert.assertEquals(generatedJson, reparsed.getJson());
+        JSONAssert.assertJsonEquals(generatedJson, reparsed.getJson());
     }
 
     @Test
@@ -61,7 +61,16 @@ public class PipelineObjectTest {
         // As a result order actually matters in this check.
         List<com.amazonaws.services.datapipeline.model.PipelineObject> testObjects =  obj.getAWSObjects();
         for (int i = 0; i < pipeline3.size(); i++) {
-            assertEquals(pipeline3.get(i), testObjects.get(i));
+            com.amazonaws.services.datapipeline.model.PipelineObject expected = pipeline3.get(i);
+            com.amazonaws.services.datapipeline.model.PipelineObject validation = testObjects.get(i);
+
+            assertEquals(expected.getId(), validation.getId());
+            assertEquals(expected.getName(), validation.getName());
+            assertEquals(expected.getFields().size(), validation.getFields().size());
+
+            for (Field expectedField: expected.getFields()) {
+                assertTrue(validation.getFields().contains(expectedField));
+            }
         }
     }
 
