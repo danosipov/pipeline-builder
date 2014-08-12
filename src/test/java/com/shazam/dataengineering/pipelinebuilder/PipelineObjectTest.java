@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 import static junit.framework.Assert.*;
 
@@ -74,6 +75,7 @@ public class PipelineObjectTest {
     public void validateDateShouldNotValidateEpochStart() throws Exception {
         Date epoch = new Date(0);
         SimpleDateFormat dateFormat = new SimpleDateFormat(PipelineObject.PIPELINE_DATE_FORMAT);
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         assertFalse(PipelineObject.validateDate(dateFormat.format(epoch)));
     }
 
