@@ -2,6 +2,7 @@ package com.shazam.dataengineering.pipelinebuilder;
 
 import com.amazonaws.services.datapipeline.model.Field;
 import hudson.util.IOUtils;
+import net.sf.json.test.JSONAssert;
 import org.junit.Test;
 
 import java.io.File;
@@ -31,7 +32,7 @@ public class PipelineObjectTest {
         PipelineObject reparsed = new PipelineObject(generatedJson);
 
         assertTrue(reparsed.isValid());
-        assertEquals(generatedJson, reparsed.getJson());
+        JSONAssert.assertEquals(generatedJson, reparsed.getJson());
     }
 
     @Test
@@ -58,7 +59,10 @@ public class PipelineObjectTest {
 
         // DeepEquals doesn't validate properly, must be incorrect implementation of equals.
         // As a result order actually matters in this check.
-        assertEquals(pipeline3, obj.getAWSObjects());
+        List<com.amazonaws.services.datapipeline.model.PipelineObject> testObjects =  obj.getAWSObjects();
+        for (int i = 0; i < pipeline3.size(); i++) {
+            assertEquals(pipeline3.get(i), testObjects.get(i));
+        }
     }
 
     @Test
