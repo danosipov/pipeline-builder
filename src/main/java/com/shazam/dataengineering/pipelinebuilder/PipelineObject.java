@@ -6,21 +6,24 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.text.DateFormat;
+import java.text.FieldPosition;
+import java.text.ParsePosition;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class PipelineObject {
+    public static final String PIPELINE_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
+
     private JSONObject pipeline;
+    private ParseException parseException;
 
     public PipelineObject(String json) {
         try {
             JSONParser jsonParser = new JSONParser();
             pipeline = (JSONObject) jsonParser.parse(json);
         } catch (ParseException e) {
-            // TODO: Store error, perhaps it would be helpful
-            //e.printStackTrace();
+            parseException = e;
         }
     }
 
@@ -29,11 +32,12 @@ public class PipelineObject {
     }
 
     public void setScheduleDate(String date) {
-        // TODO: Validate the date, warn if in the past
-        if (isValid()) {
+        if (isValid() && validateDate(date)) {
             JSONArray objectArray = (JSONArray) pipeline.get("objects");
             for (Object object : objectArray) {
                 Object type = ((JSONObject) object).get("type");
+                // TODO: Handle multiple Schedule objects
+                // TODO: Handle runOnce objects
                 if (type != null && type.toString().equals("Schedule")) {
                     ((JSONObject) object).put("startDateTime", date);
                 }
@@ -53,6 +57,28 @@ public class PipelineObject {
         }
 
         return "";
+    }
+
+    public static Date getDate(String date) throws java.text.ParseException {
+        SimpleDateFormat dateFormat = new SimpleDateFormat(PIPELINE_DATE_FORMAT);
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return dateFormat.parse(date);
+    }
+
+    public static boolean isPast(String date) {
+        try {
+            return getDate(date).after(new Date());
+        } catch (java.text.ParseException e) {
+            return false; // Senseless response. Assume user has already validated the date
+        }
+    }
+
+    public static boolean validateDate(String date) {
+        try {
+            return getDate(date).after(new Date(1)); // crude check that we don't have epoch start
+        } catch (java.text.ParseException e) {
+            return false;
+        }
     }
 
     public String getJson() {

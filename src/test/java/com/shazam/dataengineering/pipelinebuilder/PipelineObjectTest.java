@@ -2,12 +2,16 @@ package com.shazam.dataengineering.pipelinebuilder;
 
 import com.amazonaws.services.datapipeline.model.Field;
 import hudson.FilePath;
-import junit.framework.Assert;
+
 import org.junit.Test;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+
+import static junit.framework.Assert.*;
 
 public class PipelineObjectTest {
     @Test
@@ -15,7 +19,7 @@ public class PipelineObjectTest {
         String json = new FilePath(new File("src/test/resources/pipeline1.json")).readToString();
         PipelineObject obj = new PipelineObject(json);
 
-        Assert.assertTrue(obj.isValid());
+        assertTrue(obj.isValid());
     }
 
     @Test
@@ -25,8 +29,8 @@ public class PipelineObjectTest {
         String generatedJson = obj.getJson();
         PipelineObject reparsed = new PipelineObject(generatedJson);
 
-        Assert.assertTrue(reparsed.isValid());
-        Assert.assertEquals(generatedJson, reparsed.getJson());
+        assertTrue(reparsed.isValid());
+        assertEquals(generatedJson, reparsed.getJson());
     }
 
     @Test
@@ -36,12 +40,12 @@ public class PipelineObjectTest {
 
         PipelineObject obj = new PipelineObject(json);
         PipelineObject validation = new PipelineObject(replacedJson);
-        Assert.assertEquals("2014-07-26T01:20:00", obj.getScheduleDate());
+        assertEquals("2014-07-26T01:20:00", obj.getScheduleDate());
 
         obj.setScheduleDate("2014-08-22T03:45:10");
 
-        Assert.assertEquals("2014-08-22T03:45:10", obj.getScheduleDate());
-        Assert.assertEquals(validation.getJson(), obj.getJson());
+        assertEquals("2014-08-22T03:45:10", obj.getScheduleDate());
+        assertEquals(validation.getJson(), obj.getJson());
     }
 
 
@@ -53,7 +57,38 @@ public class PipelineObjectTest {
 
         // DeepEquals doesn't validate properly, must be incorrect implementation of equals.
         // As a result order actually matters in this check.
-        Assert.assertEquals(pipeline3, obj.getAWSObjects());
+        assertEquals(pipeline3, obj.getAWSObjects());
+    }
+
+    @Test
+    public void validateDateShouldValidateProperDate() throws Exception {
+        assertTrue(PipelineObject.validateDate("2014-07-26T01:20:00"));
+    }
+
+    @Test
+    public void validateDateShouldNotValidateImproperDate() throws Exception {
+        assertFalse(PipelineObject.validateDate("2014-07/26T01=20:00"));
+    }
+
+    @Test
+    public void validateDateShouldNotValidateEpochStart() throws Exception {
+        Date epoch = new Date(0);
+        SimpleDateFormat dateFormat = new SimpleDateFormat(PipelineObject.PIPELINE_DATE_FORMAT);
+        assertFalse(PipelineObject.validateDate(dateFormat.format(epoch)));
+    }
+
+    @Test
+    public void isPastShouldReturnTrueForDatesInThePast() throws Exception {
+        Date past = new Date(1400000000L);
+        SimpleDateFormat dateFormat = new SimpleDateFormat(PipelineObject.PIPELINE_DATE_FORMAT);
+        assertFalse(PipelineObject.isPast(dateFormat.format(past)));
+    }
+
+    @Test
+    public void isPastShouldReturnFalseForDatesInTheFuture() throws Exception {
+        Date future = new Date(2407866423L);
+        SimpleDateFormat dateFormat = new SimpleDateFormat(PipelineObject.PIPELINE_DATE_FORMAT);
+        assertFalse(PipelineObject.isPast(dateFormat.format(future)));
     }
 
     /**

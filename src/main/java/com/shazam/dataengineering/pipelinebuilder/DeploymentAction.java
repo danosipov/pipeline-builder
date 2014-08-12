@@ -70,7 +70,6 @@ public class DeploymentAction implements Action {
         return lastException;
     }
 
-    // TODO: RunOnce pipelines
     public List<String> getPipelines() {
         ArrayList<String> pipelines = new ArrayList<String>();
         if (artifacts != null && artifacts.size() > 0) {
@@ -109,11 +108,15 @@ public class DeploymentAction implements Action {
     }
 
     public void doConfirmProcess(StaplerRequest req, StaplerResponse resp) throws IOException, ServletException {
-        // TODO: Process parameters, forward to confirm
         JSONObject formData = req.getSubmittedForm();
         pipelineFile = formData.getString("pipeline");
         String startDate = formData.getString("scheduleDate");
-        // TODO: Validate startdate!
+        if (!PipelineObject.validateDate(startDate)) {
+            clientMessages.add("[ERROR] Passed start date was not in expected format: " + PipelineObject.PIPELINE_DATE_FORMAT);
+            resp.forward(this, "error", req);
+        } else if (PipelineObject.isPast(startDate)) {
+            clientMessages.add("[WARN] Passed start date is in the past. Backfill may occur.");
+        }
 
         pipelineObject = getPipelineByName(pipelineFile);
         if (pipelineObject == null) {
