@@ -1,11 +1,11 @@
 package com.shazam.dataengineering.pipelinebuilder;
 
 import com.amazonaws.services.datapipeline.model.Field;
-import hudson.FilePath;
-
+import hudson.util.IOUtils;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -17,7 +17,7 @@ import static junit.framework.Assert.*;
 public class PipelineObjectTest {
     @Test
     public void pipeline1shouldParseProperly() throws Exception {
-        String json = new FilePath(new File("src/test/resources/pipeline1.json")).readToString();
+        String json = IOUtils.toString(new FileInputStream(new File("src/test/resources/pipeline1.json")), "UTF-8");
         PipelineObject obj = new PipelineObject(json);
 
         assertTrue(obj.isValid());
@@ -25,7 +25,7 @@ public class PipelineObjectTest {
 
     @Test
     public void pipeline1shouldReParseIntoTheSameText() throws Exception {
-        String json = new FilePath(new File("src/test/resources/pipeline1.json")).readToString();
+        String json = IOUtils.toString(new FileInputStream(new File("src/test/resources/pipeline1.json")), "UTF-8");
         PipelineObject obj = new PipelineObject(json);
         String generatedJson = obj.getJson();
         PipelineObject reparsed = new PipelineObject(generatedJson);
@@ -36,7 +36,7 @@ public class PipelineObjectTest {
 
     @Test
     public void pipeline1shouldReplaceDate() throws Exception {
-        String json = new FilePath(new File("src/test/resources/pipeline1.json")).readToString();
+        String json = IOUtils.toString(new FileInputStream(new File("src/test/resources/pipeline1.json")), "UTF-8");
         String replacedJson = json.replace("2014-07-26T01:20:00", "2014-08-22T03:45:10");
 
         PipelineObject obj = new PipelineObject(json);
@@ -53,7 +53,7 @@ public class PipelineObjectTest {
     @Test
     public void pipeline3shouldParseIntoAWSPipelineObjectCorrectly() throws Exception {
         List<com.amazonaws.services.datapipeline.model.PipelineObject> pipeline3 = getAWSPipeline3();
-        String json = new FilePath(new File("src/test/resources/pipeline3.json")).readToString();
+        String json = IOUtils.toString(new FileInputStream(new File("src/test/resources/pipeline3.json")), "UTF-8");
         PipelineObject obj = new PipelineObject(json);
 
         // DeepEquals doesn't validate properly, must be incorrect implementation of equals.
@@ -96,6 +96,7 @@ public class PipelineObjectTest {
     /**
      * Manually construct AWS Pipeline object for pipeline3 definition.
      * Note - order matters - see the test
+     *
      * @return List<PipelineObject>
      */
     private List<com.amazonaws.services.datapipeline.model.PipelineObject> getAWSPipeline3() {
