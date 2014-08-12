@@ -6,9 +6,6 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import java.text.DateFormat;
-import java.text.FieldPosition;
-import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -29,6 +26,10 @@ public class PipelineObject {
 
     public boolean isValid() {
         return pipeline != null;
+    }
+
+    public Exception getError() {
+        return parseException;
     }
 
     public void setScheduleDate(String date) {

@@ -111,6 +111,8 @@ public class DeploymentAction implements Action {
         JSONObject formData = req.getSubmittedForm();
         pipelineFile = formData.getString("pipeline");
         String startDate = formData.getString("scheduleDate");
+
+        // Validate start date, and warn if its in the past.
         if (!PipelineObject.validateDate(startDate)) {
             clientMessages.add("[ERROR] Passed start date was not in expected format: " + PipelineObject.PIPELINE_DATE_FORMAT);
             resp.forward(this, "error", req);
@@ -118,6 +120,7 @@ public class DeploymentAction implements Action {
             clientMessages.add("[WARN] Passed start date is in the past. Backfill may occur.");
         }
 
+        // Validate chosen pipeline
         pipelineObject = getPipelineByName(pipelineFile);
         if (pipelineObject == null) {
             clientMessages.add("[ERROR] Pipeline not found");
@@ -126,6 +129,7 @@ public class DeploymentAction implements Action {
             pipelineObject.setScheduleDate(startDate);
         }
 
+        // Find previously deployed pipeline.
         try {
             DataPipelineClient client = new DataPipelineClient(credentials);
             pipelineToRemoveId = getPipelineId(pipelineFile, client);
