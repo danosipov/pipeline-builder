@@ -70,13 +70,19 @@ public class DeploymentAction implements Action {
         return lastException;
     }
 
-    // TODO: RunOnce
+    // TODO: RunOnce pipelines
     public List<String> getPipelines() {
         ArrayList<String> pipelines = new ArrayList<String>();
         if (artifacts != null && artifacts.size() > 0) {
             for (Run.Artifact artifact : artifacts) {
-                // TODO: Validate the artifact is a valid pipeline
-                pipelines.add(artifact.getFileName());
+                try {
+                    PipelineObject object = new PipelineObject(new FilePath(artifact.getFile()).readToString());
+                    if (object.isValid()) {
+                        pipelines.add(artifact.getFileName());
+                    }
+                } catch (IOException e) {
+                    // Ignore
+                }
             }
         }
 

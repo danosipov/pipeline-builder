@@ -35,12 +35,12 @@ public class PipelineProcessorTest {
         Method method = processor.getClass().getDeclaredMethod("getSubstitutionMap", Environment.class);
         method.setAccessible(true);
 
-        Environment env = new Environment("test", "key1: value1\nkey2: value2\n$key3: $value3");
+        Environment env = new Environment("test", "key1: value1\nkey2: value2a:value2b\n$key3: $value3");
 
         Map<String, String> result = (Map<String, String>) method.invoke(processor, env);
 
         assertEquals("value1", result.get("key1"));
-        assertEquals("value2", result.get("key2"));
+        assertEquals("value2a:value2b", result.get("key2"));
         assertEquals("$value3", result.get("$key3"));
         assertFalse(result.containsKey("notThere"));
     }

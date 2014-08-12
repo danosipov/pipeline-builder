@@ -20,7 +20,7 @@ public class PipelineObject {
             pipeline = (JSONObject) jsonParser.parse(json);
         } catch (ParseException e) {
             // TODO: Store error, perhaps it would be helpful
-            e.printStackTrace();
+            //e.printStackTrace();
         }
     }
 

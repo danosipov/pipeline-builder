@@ -122,7 +122,6 @@ public class PipelineProcessor {
         return json;
     }
 
-    // TODO Test
     private Map<String, String> getSubstitutionMap(Environment environment) {
         HashMap<String, String> substitutions = new HashMap<String, String>();
         String params = environment.getConfigParam();

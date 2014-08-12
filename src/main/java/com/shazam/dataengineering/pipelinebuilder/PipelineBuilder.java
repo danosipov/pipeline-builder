@@ -1,38 +1,29 @@
 package com.shazam.dataengineering.pipelinebuilder;
 
 import com.amazonaws.auth.BasicAWSCredentials;
-import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.*;
+import hudson.model.AbstractBuild;
+import hudson.model.AbstractProject;
+import hudson.model.BuildListener;
+import hudson.model.Descriptor;
 import hudson.security.Permission;
 import hudson.security.PermissionGroup;
 import hudson.security.PermissionScope;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
-import hudson.tasks.Recorder;
-import hudson.util.FormValidation;
-import hudson.util.ListBoxModel;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
-import javax.servlet.ServletException;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PipelineBuilder extends Builder {
-    private Environment[] configParams;
-    private String file;
-
-    private static ProductionEnvironment productionEnvironment = new ProductionEnvironment("Production");
-    private static DevelopmentEnvironment developmentEnvironment = new DevelopmentEnvironment("Development");
-
     public static final PermissionGroup PERMISSIONS = new PermissionGroup(
             PipelineBuilder.class, Messages._PipelineBuilder_PermissionsTitle());
-
     /**
      * Permission to trigger pipeline deploys.
      */
@@ -42,6 +33,10 @@ public class PipelineBuilder extends Builder {
             Messages._PipelineBuilder_DeployPermission_Description(),
             null,
             PermissionScope.ITEM);
+    private static ProductionEnvironment productionEnvironment = new ProductionEnvironment("Production");
+    private static DevelopmentEnvironment developmentEnvironment = new DevelopmentEnvironment("Development");
+    private Environment[] configParams;
+    private String file;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
@@ -104,7 +99,6 @@ public class PipelineBuilder extends Builder {
      * Descriptor for {@link PipelineBuilder}. Used as a singleton.
      * The class is marked as public so that it can be accessed from views.
      * <p/>
-     * TODO: For global parameters
      */
     @Extension // This indicates to Jenkins that this is an implementation of an extension point.
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
@@ -153,13 +147,9 @@ public class PipelineBuilder extends Builder {
 
         @Override
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
-            // To persist global configuration information,
-            // set that to properties and call save().
             accessId = formData.getString("accessId");
             secretKey = formData.getString("secretKey");
 
-            // ^Can also use req.bindJSON(this, formData);
-            //  (easier when there are many fields; need set* methods for this, like setUseFrench)
             save();
             return super.configure(req, formData);
         }
