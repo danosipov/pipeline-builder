@@ -94,14 +94,14 @@ public class PipelineObjectTest {
 
     @Test
     public void isPastShouldReturnTrueForDatesInThePast() throws Exception {
-        Date past = new Date(1400000000L);
+        Date past = new Date(1400000000L * 1000);
         SimpleDateFormat dateFormat = new SimpleDateFormat(PipelineObject.PIPELINE_DATE_FORMAT);
-        assertFalse(PipelineObject.isPast(dateFormat.format(past)));
+        assertTrue(PipelineObject.isPast(dateFormat.format(past)));
     }
 
     @Test
     public void isPastShouldReturnFalseForDatesInTheFuture() throws Exception {
-        Date future = new Date(2407866423L);
+        Date future = new Date(2407866423L * 1000);
         SimpleDateFormat dateFormat = new SimpleDateFormat(PipelineObject.PIPELINE_DATE_FORMAT);
         assertFalse(PipelineObject.isPast(dateFormat.format(future)));
     }

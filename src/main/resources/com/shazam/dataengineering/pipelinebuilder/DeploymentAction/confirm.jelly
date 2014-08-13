@@ -9,8 +9,14 @@
                         Steps about to be taken:
                         <ol>
                             <li>Create new pipeline ${it.pipelineFile}</li>
-                            <li>Upload configuration for pipeline with start date ${it.scheduledDate}</li>
-                            <li>Remove old pipeline ${it.pipelineToRemoveId}, if exists</li>
+                            <li>Upload configuration for pipeline with start date ${it.scheduledDate}
+                                <j:if test="${it.isStartDatePast()}">
+                                    <br /><b>WARNING: </b> Scheduled date is in the past. Backfill may occur
+                                </j:if>
+                            </li>
+                            <j:if test="${it.pipelineToRemoveId}">
+                                <li>Remove old pipeline ${it.pipelineToRemoveId}</li>
+                            </j:if>
                             <li>Activate new pipeline</li>
                         </ol>
                         <f:submit value="${%Proceed}" />

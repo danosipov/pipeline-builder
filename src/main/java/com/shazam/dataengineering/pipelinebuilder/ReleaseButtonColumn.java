@@ -12,7 +12,7 @@ public class ReleaseButtonColumn extends ListViewColumn {
     }
 
     public boolean isDeployConfigured(Job job) {
-        return job.getLastBuild().getAction(DeploymentAction.class) != null;
+        return job.getLastBuild() != null && job.getLastBuild().getAction(DeploymentAction.class) != null;
     }
 
     @Extension

@@ -70,6 +70,10 @@ public class DeploymentAction implements Action {
         return lastException;
     }
 
+    public boolean isStartDatePast() {
+        return pipelineObject != null && PipelineObject.isPast(pipelineObject.getScheduleDate());
+    }
+
     public List<String> getPipelines() {
         ArrayList<String> pipelines = new ArrayList<String>();
         if (artifacts != null && artifacts.size() > 0) {

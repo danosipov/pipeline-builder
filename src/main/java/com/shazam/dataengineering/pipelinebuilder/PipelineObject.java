@@ -68,7 +68,7 @@ public class PipelineObject {
 
     public static boolean isPast(String date) {
         try {
-            return getDate(date).after(new Date());
+            return !getDate(date).after(new Date());
         } catch (java.text.ParseException e) {
             return false; // Senseless response. Assume user has already validated the date
         }
