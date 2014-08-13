@@ -1,10 +1,14 @@
 package com.shazam.dataengineering.pipelinebuilder;
 
 import hudson.FilePath;
+import hudson.Launcher;
+import hudson.Proc;
 import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -16,12 +20,14 @@ public class PipelineProcessor {
 
     private AbstractBuild build;
     private BuildListener listener;
+    private Launcher launcher;
     private ArrayList<Environment> environments;
     private String name;
     private int buildNumber;
 
-    public PipelineProcessor(AbstractBuild build, BuildListener listener) {
+    public PipelineProcessor(AbstractBuild build, Launcher launcher, BuildListener listener) {
         this.listener = listener;
+        this.launcher = launcher;
         this.build = build;
 
         this.name = build.getProject().getName().replace(" ", "-");
@@ -43,6 +49,7 @@ public class PipelineProcessor {
                     String fileName = getFileName(env, counter);
                     counter += 1;
                     storeProcessedFile(fileName, text, env);
+                    writeDOT(fileName);
                 }
                 return true;
             } catch (IOException e) {
@@ -53,6 +60,29 @@ public class PipelineProcessor {
             return false;
         }
     }
+
+    private void writeDOT(String filename) throws IOException {
+        FilePath pipelinePath = new FilePath(new FilePath(build.getArtifactsDir()), filename);
+        PipelineObject pipelineObject = new PipelineObject(pipelinePath.readToString());
+        FileWriter dotWriter = new FileWriter(new File(build.getArtifactsDir(), filename.replace(".json", ".dot")));
+
+        pipelineObject.writeDOT(dotWriter);
+    }
+
+//    private void pipely(String filename) {
+//        FilePath pipelinePath = new FilePath(new FilePath(build.getArtifactsDir()), filename);
+//
+//        try {
+//            Launcher.ProcStarter starter = launcher.launch();
+//            Proc proc = launcher.launch("dir", build.getEnvVars(), listener.getLogger(),build.getProject().getWorkspace());
+//            int exitCode = proc.join();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//
+//    }
 
     private String getFileName(Environment environment, int counter) {
         String prefix;

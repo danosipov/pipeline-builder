@@ -51,7 +51,7 @@ public class PipelineBuilder extends Builder {
         FilePath ws = build.getWorkspace();
         FilePath input = ws.child(file);
 
-        PipelineProcessor processor = new PipelineProcessor(build, listener);
+        PipelineProcessor processor = new PipelineProcessor(build, launcher, listener);
         processor.setEnvironments(configParams);
 
         boolean result = processor.process(input);

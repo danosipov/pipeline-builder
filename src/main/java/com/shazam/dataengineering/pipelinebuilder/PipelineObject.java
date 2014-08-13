@@ -1,11 +1,17 @@
 package com.shazam.dataengineering.pipelinebuilder;
 
 import com.amazonaws.services.datapipeline.model.Field;
+import org.jgrapht.ext.*;
+import org.jgrapht.graph.ClassBasedEdgeFactory;
+import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.DirectedMultigraph;
+import org.jgrapht.graph.SimpleDirectedGraph;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import java.io.Writer;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -120,6 +126,10 @@ public class PipelineObject {
         }
 
         return list;
+    }
+
+    public void writeDOT(Writer writer) {
+        new GraphWriter().writeDOT(writer, this);
     }
 
     private HashSet<Field> parseFields(HashSet<Field> accumulator, Object json, String key) {
