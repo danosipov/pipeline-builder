@@ -69,21 +69,6 @@ public class PipelineProcessor {
         pipelineObject.writeDOT(dotWriter);
     }
 
-//    private void pipely(String filename) {
-//        FilePath pipelinePath = new FilePath(new FilePath(build.getArtifactsDir()), filename);
-//
-//        try {
-//            Launcher.ProcStarter starter = launcher.launch();
-//            Proc proc = launcher.launch("dir", build.getEnvVars(), listener.getLogger(),build.getProject().getWorkspace());
-//            int exitCode = proc.join();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//
-//    }
-
     private String getFileName(Environment environment, int counter) {
         String prefix;
         if (environment instanceof DevelopmentEnvironment) {

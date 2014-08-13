@@ -12,6 +12,7 @@ import org.jgrapht.graph.DirectedMultigraph;
 import java.io.Writer;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Class responsible for writing out DOT representation of the pipeline.
@@ -34,6 +35,7 @@ public class GraphWriter {
 
     /**
      * Build DAG of the pipeline for writing to DOT
+     * Only generates activity information. Full graphs tend to be very noisy.
      *
      * @return DirectedMultigraph representation of the pipeline
      */
@@ -48,17 +50,23 @@ public class GraphWriter {
 
         List<com.amazonaws.services.datapipeline.model.PipelineObject> awsObjects = pipeline.getAWSObjects();
         for (com.amazonaws.services.datapipeline.model.PipelineObject awsObject : awsObjects) {
-            // Ignore default object
+            // Ignore everything except activities
             if (!awsObject.getId().equals("Default")) {
-                idToPipeline.put(awsObject.getId(), awsObject);
-                graph.addVertex(awsObject);
+                for (Field field : awsObject.getFields()) {
+                    // Only add activities to the DOT
+                    if (field.getKey().equals("type") && field.getStringValue().contains("Activity")) {
+                        idToPipeline.put(awsObject.getId(), awsObject);
+                        graph.addVertex(awsObject);
+                    }
+                }
             }
         }
 
-        for (com.amazonaws.services.datapipeline.model.PipelineObject awsObject : awsObjects) {
+        for (com.amazonaws.services.datapipeline.model.PipelineObject awsObject :
+                (Set<com.amazonaws.services.datapipeline.model.PipelineObject>) graph.vertexSet()) {
             List<Field> fields = awsObject.getFields();
             for (Field field : fields) {
-                if (field.getRefValue() != null) {
+                if (field.getRefValue() != null && idToPipeline.containsKey(field.getRefValue())) {
                     graph.addEdge(awsObject, idToPipeline.get(field.getRefValue()),
                             new RelationshipEdge<com.amazonaws.services.datapipeline.model.PipelineObject>(
                                     awsObject,
@@ -85,10 +93,14 @@ public class GraphWriter {
                     }
                 }
 
-                return label.replaceAll("\"", "\'");
+                return clean(label);
             } else {
-                return object.toString().replaceAll("\"", "\'");
+                return clean(object.toString());
             }
+        }
+
+        private String clean(String input) {
+            return input.replaceAll("\"", "\'");
         }
     }
 
