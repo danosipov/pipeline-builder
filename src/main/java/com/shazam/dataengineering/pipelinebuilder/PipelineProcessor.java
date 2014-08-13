@@ -2,7 +2,6 @@ package com.shazam.dataengineering.pipelinebuilder;
 
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.Proc;
 import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
 
@@ -39,6 +38,10 @@ public class PipelineProcessor {
         environments.addAll(Arrays.asList(environmentArray));
     }
 
+    public void setS3Prefix(String s3Url) {
+        // TODO
+    }
+
     public boolean process(FilePath file) {
         if (checkExists(file)) {
             try {
@@ -50,6 +53,8 @@ public class PipelineProcessor {
                     counter += 1;
                     storeProcessedFile(fileName, text, env);
                     writeDOT(fileName);
+                    // TODO: attempt to convert to png
+                    // Using CLI: dot -Tpng input.dot > output.png
                 }
                 return true;
             } catch (IOException e) {
@@ -122,6 +127,13 @@ public class PipelineProcessor {
 
     private String performSubstitutions(String json, Environment environment) {
         Map<String, String> substitutions = getSubstitutionMap(environment);
+        json = substituteMapValues(json, substitutions);
+        json = substituteScriptUrls(json);
+
+        return json;
+    }
+
+    private String substituteMapValues(String json, Map<String, String> substitutions) {
         String pattern = "(\\$\\{%s\\})";
         for (String key: substitutions.keySet()) {
             String replacement = Matcher.quoteReplacement(substitutions.get(key));
@@ -135,6 +147,29 @@ public class PipelineProcessor {
         }
 
         return json;
+    }
+
+    private String substituteScriptUrls(String json) {
+        Pattern pattern = Pattern.compile("(\\$\\{\\w?\\})");
+        Matcher matcher = pattern.matcher(json);
+        while (matcher.find()) {
+            String potentialScript = matcher.group();
+            if (archiveFile(potentialScript)) {
+                // TODO: replace key by S3 URL path to the script
+            }
+        }
+
+        // TODO: Replace files
+//        build.getWorkspace().list()
+//                build.getUpstreamBuilds()
+//        build.getUpstreamBuilds().keySet()
+//        .getLastBuild().getArtifacts()
+
+        return json;
+    }
+
+    private boolean archiveFile(String filename) {
+        return false;
     }
 
     private Map<String, String> getSubstitutionMap(Environment environment) {

@@ -37,12 +37,14 @@ public class PipelineBuilder extends Builder {
     private static DevelopmentEnvironment developmentEnvironment = new DevelopmentEnvironment("Development");
     private Environment[] configParams;
     private String file;
+    private String s3Prefix;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public PipelineBuilder(String filePath, Environment[] environment) {
+    public PipelineBuilder(String filePath, String s3Prefix, Environment[] environment) {
         this.configParams = environment;
         this.file = filePath;
+        setS3Prefix(s3Prefix);
     }
 
     @Override
@@ -53,6 +55,7 @@ public class PipelineBuilder extends Builder {
 
         PipelineProcessor processor = new PipelineProcessor(build, launcher, listener);
         processor.setEnvironments(configParams);
+        processor.setS3Prefix(s3Prefix);
 
         boolean result = processor.process(input);
         if (result) {
@@ -88,6 +91,18 @@ public class PipelineBuilder extends Builder {
             }
         }
         return env;
+    }
+
+    public String getS3Prefix() {
+        return s3Prefix;
+    }
+
+    public void setS3Prefix(String s3Prefix) {
+        if (s3Prefix.endsWith("/")) {
+            this.s3Prefix = s3Prefix;
+        } else {
+            this.s3Prefix = s3Prefix + "/";
+        }
     }
 
     @Override

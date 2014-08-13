@@ -15,6 +15,9 @@
     <f:entry title="Pipeline file" field="filePath">
         <f:textbox name="filePath"/>
     </f:entry>
+    <f:entry title="S3 Bucket to deploy scripts into" field="s3Prefix">
+        <f:textbox name="s3Prefix"/>
+    </f:entry>
     <f:entry>
         <f:block>
             <f:hetero-list name="environment" hasHeader="true"
