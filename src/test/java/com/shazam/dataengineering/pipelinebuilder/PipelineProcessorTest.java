@@ -1,5 +1,6 @@
 package com.shazam.dataengineering.pipelinebuilder;
 
+import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
@@ -30,7 +31,8 @@ public class PipelineProcessorTest {
     @WithoutJenkins
     public void getSubstitutionMapShouldConvertEnvironmentParametersToMap() throws Exception {
         BuildListener listener = Mockito.mock(BuildListener.class);
-        PipelineProcessor processor = new PipelineProcessor(getMockAbstractBuild(), listener);
+        Launcher launcher = Mockito.mock(Launcher.class);
+        PipelineProcessor processor = new PipelineProcessor(getMockAbstractBuild(), launcher, listener);
 
         Method method = processor.getClass().getDeclaredMethod("getSubstitutionMap", Environment.class);
         method.setAccessible(true);
@@ -49,7 +51,8 @@ public class PipelineProcessorTest {
     @WithoutJenkins
     public void performSubstitutionsShouldSubstitutePlaceholders() throws Exception {
         BuildListener listener = Mockito.mock(BuildListener.class);
-        PipelineProcessor processor = new PipelineProcessor(getMockAbstractBuild(), listener);
+        Launcher launcher = Mockito.mock(Launcher.class);
+        PipelineProcessor processor = new PipelineProcessor(getMockAbstractBuild(), launcher, listener);
 
         Method method = processor.getClass().getDeclaredMethod("performSubstitutions", String.class, Environment.class);
         method.setAccessible(true);
