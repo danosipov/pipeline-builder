@@ -12,6 +12,7 @@ import org.jvnet.hudson.test.WithoutJenkins;
 import org.mockito.Mockito;
 
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.*;
@@ -30,9 +31,7 @@ public class PipelineProcessorTest {
     @Test
     @WithoutJenkins
     public void getSubstitutionMapShouldConvertEnvironmentParametersToMap() throws Exception {
-        BuildListener listener = Mockito.mock(BuildListener.class);
-        Launcher launcher = Mockito.mock(Launcher.class);
-        PipelineProcessor processor = new PipelineProcessor(getMockAbstractBuild(), launcher, listener);
+        PipelineProcessor processor = getDefaultPipelineProcessor();
 
         Method method = processor.getClass().getDeclaredMethod("getSubstitutionMap", Environment.class);
         method.setAccessible(true);
@@ -50,19 +49,40 @@ public class PipelineProcessorTest {
     @Test
     @WithoutJenkins
     public void performSubstitutionsShouldSubstitutePlaceholders() throws Exception {
-        BuildListener listener = Mockito.mock(BuildListener.class);
-        Launcher launcher = Mockito.mock(Launcher.class);
-        PipelineProcessor processor = new PipelineProcessor(getMockAbstractBuild(), launcher, listener);
+        PipelineProcessor processor = getDefaultPipelineProcessor();
 
-        Method method = processor.getClass().getDeclaredMethod("performSubstitutions", String.class, Environment.class);
+        Method method = processor.getClass().getDeclaredMethod("performSubstitutions",
+                String.class, String.class, Environment.class);
         method.setAccessible(true);
 
         Environment env = new Environment("test", "key1: value1\nkey2: value2\n$key3: $value3");
         String json = "{\"object1\":\"${key1}\", \"object2\":\"${$key3}\", \"object3\":\"${key4}\"}";
         String expected = "{\"object1\":\"value1\", \"object2\":\"$value3\", \"object3\":\"${key4}\"}";
 
-        String result = (String) method.invoke(processor, json, env);
+        String result = (String) method.invoke(processor, json, "", env);
         assertEquals(expected, result);
+    }
+
+    @Test
+    @WithoutJenkins
+    public void unreplacedKeysShouldGenerateAWarning() throws Exception {
+        PipelineProcessor processor = getDefaultPipelineProcessor();
+        String json = "{\"object1\":\"${key1}\", \"object2\":\"${$key3}\", \"object3\":\"${key4}\"}";
+
+        Method method = processor.getClass().getDeclaredMethod("warnForUnreplacedKeys", String.class);
+        method.setAccessible(true);
+
+        List<String> warnings = (List<String>) method.invoke(processor, json);
+
+        assertEquals(3, warnings.size());
+        assertEquals("Unreplaced token found in pipeline object: ${key1}", warnings.get(0));
+    }
+
+    private PipelineProcessor getDefaultPipelineProcessor() {
+        BuildListener listener = Mockito.mock(BuildListener.class);
+        Launcher launcher = Mockito.mock(Launcher.class);
+        PipelineProcessor processor = new PipelineProcessor(getMockAbstractBuild(), launcher, listener);
+        return processor;
     }
 
     private AbstractBuild getMockAbstractBuild() {

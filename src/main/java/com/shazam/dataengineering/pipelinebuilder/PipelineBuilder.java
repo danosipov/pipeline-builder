@@ -98,6 +98,7 @@ public class PipelineBuilder extends Builder {
     }
 
     public void setS3Prefix(String s3Prefix) {
+        // TODO: add validation to this field (needs to start with s3://)
         if (s3Prefix.endsWith("/")) {
             this.s3Prefix = s3Prefix;
         } else {

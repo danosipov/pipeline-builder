@@ -3,7 +3,9 @@ package com.shazam.dataengineering.pipelinebuilder;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
+import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
+import hudson.model.Run;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -23,6 +25,7 @@ public class PipelineProcessor {
     private ArrayList<Environment> environments;
     private String name;
     private int buildNumber;
+    private String s3Url;
 
     public PipelineProcessor(AbstractBuild build, Launcher launcher, BuildListener listener) {
         this.listener = listener;
@@ -39,7 +42,7 @@ public class PipelineProcessor {
     }
 
     public void setS3Prefix(String s3Url) {
-        // TODO
+        this.s3Url = s3Url;
     }
 
     public boolean process(FilePath file) {
@@ -88,7 +91,7 @@ public class PipelineProcessor {
     }
 
     private boolean storeProcessedFile(String fileName, String json, Environment environment) {
-        String newJson = performSubstitutions(json, environment);
+        String newJson = performSubstitutions(json, fileName, environment);
         List<String> warnings = warnForUnreplacedKeys(newJson);
         for (String warning: warnings) {
             listener.getLogger().println("[WARN] " + warning);
@@ -116,7 +119,7 @@ public class PipelineProcessor {
 
     private List<String> warnForUnreplacedKeys(String json) {
         ArrayList<String> warnings = new ArrayList<String>();
-        Pattern pattern = Pattern.compile("(\\$\\{\\w?\\})");
+        Pattern pattern = Pattern.compile("\\$\\{([^}]+)\\}");
         Matcher matcher = pattern.matcher(json);
         while (matcher.find()) {
             warnings.add(String.format("Unreplaced token found in pipeline object: %s", matcher.group()));
@@ -125,10 +128,24 @@ public class PipelineProcessor {
         return warnings;
     }
 
-    private String performSubstitutions(String json, Environment environment) {
+    /**
+     * Substitute keys in passed in json by corresponding values.
+     * First pass substitutes environment variables as defined in the build configuration
+     * Second pass looks for scripts to be replaced.
+     *
+     * @param json
+     * @param pipelineName
+     * @param environment
+     * @return
+     */
+    private String performSubstitutions(String json, String pipelineName, Environment environment) {
         Map<String, String> substitutions = getSubstitutionMap(environment);
         json = substituteMapValues(json, substitutions);
-        json = substituteScriptUrls(json);
+
+        // If s3Url is defined, process any unreplaced tokens as scripts
+        if (s3Url != null && !s3Url.isEmpty()) {
+            json = substituteScriptUrls(json, pipelineName);
+        }
 
         return json;
     }
@@ -149,26 +166,75 @@ public class PipelineProcessor {
         return json;
     }
 
-    private String substituteScriptUrls(String json) {
-        Pattern pattern = Pattern.compile("(\\$\\{\\w?\\})");
+    /**
+     * Look through json for unreplaced tokens, and see if we can match
+     * them to any files in the workspace. If we can, save the file in the artifacts.
+     * During the deployment, the files would be uploaded to a special S3 bucket for
+     * this job. The token is preemptively replaced by this URL.
+     *
+     * This method assumes s3Url is set properly.
+     *
+     * @param json
+     * @param pipelineName
+     * @return
+     */
+    private String substituteScriptUrls(String json, String pipelineName) {
+        Pattern pattern = Pattern.compile("\\$\\{([^}]+)\\}");
         Matcher matcher = pattern.matcher(json);
+        HashMap<String, String> nameToUrl = new HashMap<String, String>();
+
         while (matcher.find()) {
-            String potentialScript = matcher.group();
-            if (archiveFile(potentialScript)) {
-                // TODO: replace key by S3 URL path to the script
+            String token = matcher.group();
+            String potentialScript = token.substring(2, token.length() - 1);
+            try {
+                if (archiveFile(potentialScript)) {
+                    String scriptUrl = s3Url
+                            + pipelineName.substring(0, pipelineName.lastIndexOf(".json"))
+                            + "/" + potentialScript;
+                    nameToUrl.put(potentialScript, scriptUrl);
+                }
+            } catch (Exception e) {
+                listener.error("Error in substituting script URL: " + e.getMessage());
             }
         }
 
-        // TODO: Replace files
-//        build.getWorkspace().list()
-//                build.getUpstreamBuilds()
-//        build.getUpstreamBuilds().keySet()
-//        .getLastBuild().getArtifacts()
-
-        return json;
+        return substituteMapValues(json, nameToUrl);
     }
 
-    private boolean archiveFile(String filename) {
+    /**
+     * Iterates over current workspace and upstream project artifacts to find the defined file name
+     * If found, archive it as an artifact to make available to the deployment action.
+     *
+     * @param filename
+     * @return
+     */
+    private boolean archiveFile(String filename) throws IOException, InterruptedException {
+        // First look in current workspace
+        List<FilePath> pathList = build.getWorkspace().list();
+        for (FilePath path : pathList) {
+            if (path.getName().equals(filename)) {
+                FilePath newPath = new FilePath(new FilePath(build.getArtifactsDir()),
+                        "scripts/" + filename);
+                newPath.copyFrom(path.read());
+                return true;
+            }
+        }
+
+        // Second look in upstream projects
+        Set<AbstractProject> upstreamProjects = build.getUpstreamBuilds().keySet();
+        for (AbstractProject project : upstreamProjects) {
+            List<Run.Artifact> artifacts = project.getLastBuild().getArtifacts();
+            for (Run.Artifact artifact : artifacts) {
+                if (artifact.getFileName().equals(filename)) {
+                    FilePath newPath = new FilePath(new FilePath(build.getArtifactsDir()),
+                            "scripts/" + filename);
+                    newPath.copyFrom(new FilePath(artifact.getFile()));
+                    return true;
+                }
+            }
+
+        }
+
         return false;
     }
 
