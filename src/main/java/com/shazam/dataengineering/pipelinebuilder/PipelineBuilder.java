@@ -59,7 +59,9 @@ public class PipelineBuilder extends Builder {
 
         boolean result = processor.process(input);
         if (result) {
-            build.addAction(new DeploymentAction(build,
+            build.addAction(new DeploymentAction(
+                    build,
+                    processor.getS3Urls(),
                     new BasicAWSCredentials(
                             getDescriptor().getAccessId(),
                             getDescriptor().getSecretKey())));

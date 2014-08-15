@@ -15,6 +15,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -46,7 +47,10 @@ public class DeploymentActionTest {
     @Test
     public void removeOldPipelineShouldGenerateInfoMessagesForSuccess() throws Exception {
         DataPipelineClient dataPipelineClient = mock(DataPipelineClient.class);
-        DeploymentAction action = new DeploymentAction(getMockAbstractBuild(), new AnonymousAWSCredentials());
+        DeploymentAction action = new DeploymentAction(
+                getMockAbstractBuild(),
+                new HashMap<String, String>(),
+                new AnonymousAWSCredentials());
         DeletePipelineRequest request = new DeletePipelineRequest().withPipelineId("test");
 
         Field pipelineIdField = action.getClass().getDeclaredField("pipelineToRemoveId");
@@ -64,7 +68,10 @@ public class DeploymentActionTest {
     @Test
     public void createNewPipelineShouldReturnPipelineId() throws Exception {
         DataPipelineClient dataPipelineClient = mock(DataPipelineClient.class);
-        DeploymentAction action = new DeploymentAction(getMockAbstractBuild(), new AnonymousAWSCredentials());
+        DeploymentAction action = new DeploymentAction(
+                getMockAbstractBuild(),
+                new HashMap<String, String>(),
+                new AnonymousAWSCredentials());
         CreatePipelineResult createPipelineResult = new CreatePipelineResult().withPipelineId("test12345");
         when(dataPipelineClient.createPipeline(any(CreatePipelineRequest.class))).thenReturn(createPipelineResult);
 
@@ -98,7 +105,10 @@ public class DeploymentActionTest {
         DataPipelineClient dataPipelineClient = mock(DataPipelineClient.class);
         when(dataPipelineClient.validatePipelineDefinition(validationRequest)).thenReturn(validationResponse);
 
-        DeploymentAction action = new DeploymentAction(getMockAbstractBuild(), new AnonymousAWSCredentials());
+        DeploymentAction action = new DeploymentAction(
+                getMockAbstractBuild(),
+                new HashMap<String, String>(),
+                new AnonymousAWSCredentials());
 
         Field pipelineFileField = action.getClass().getDeclaredField("pipelineObject");
         pipelineFileField.setAccessible(true);
@@ -138,7 +148,10 @@ public class DeploymentActionTest {
         DataPipelineClient dataPipelineClient = mock(DataPipelineClient.class);
         when(dataPipelineClient.validatePipelineDefinition(validationRequest)).thenReturn(validationResponse);
 
-        DeploymentAction action = new DeploymentAction(getMockAbstractBuild(), new AnonymousAWSCredentials());
+        DeploymentAction action = new DeploymentAction(
+                getMockAbstractBuild(),
+                new HashMap<String, String>(),
+                new AnonymousAWSCredentials());
 
         Field pipelineFileField = action.getClass().getDeclaredField("pipelineObject");
         pipelineFileField.setAccessible(true);
@@ -163,7 +176,10 @@ public class DeploymentActionTest {
         DataPipelineClient dataPipelineClient = mock(DataPipelineClient.class);
         when(dataPipelineClient.putPipelineDefinition(putRequest)).thenReturn(putResult);
 
-        DeploymentAction action = new DeploymentAction(getMockAbstractBuild(), new AnonymousAWSCredentials());
+        DeploymentAction action = new DeploymentAction(
+                getMockAbstractBuild(),
+                new HashMap<String, String>(),
+                new AnonymousAWSCredentials());
 
         Field pipelineFileField = action.getClass().getDeclaredField("pipelineObject");
         pipelineFileField.setAccessible(true);
@@ -186,7 +202,10 @@ public class DeploymentActionTest {
         DataPipelineClient dataPipelineClient = mock(DataPipelineClient.class);
         when(dataPipelineClient.activatePipeline(activateRequest)).thenReturn(activateResult);
 
-        DeploymentAction action = new DeploymentAction(getMockAbstractBuild(), new AnonymousAWSCredentials());
+        DeploymentAction action = new DeploymentAction(
+                getMockAbstractBuild(),
+                new HashMap<String, String>(),
+                new AnonymousAWSCredentials());
 
         Method method = action.getClass().getDeclaredMethod("activateNewPipeline", String.class, DataPipelineClient.class);
         method.setAccessible(true);
@@ -202,7 +221,10 @@ public class DeploymentActionTest {
         List<PipelineIdName> pipelineList = new ArrayList<PipelineIdName>();
         pipelineList.add(new PipelineIdName().withId("test1").withName("p1-this-is-a-test-pipeline-1"));
         pipelineList.add(new PipelineIdName().withId("test2").withName("d2-this-is-a-test-pipeline-1"));
-        DeploymentAction action = new DeploymentAction(getMockAbstractBuild(), new AnonymousAWSCredentials());
+        DeploymentAction action = new DeploymentAction(
+                getMockAbstractBuild(),
+                new HashMap<String, String>(),
+                new AnonymousAWSCredentials());
         DataPipelineClient client = getMockDataPipelineClient(pipelineList);
 
         Method method = action.getClass().getDeclaredMethod("getPipelineId", String.class, DataPipelineClient.class);

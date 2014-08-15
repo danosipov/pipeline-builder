@@ -26,6 +26,7 @@ public class PipelineProcessor {
     private String name;
     private int buildNumber;
     private String s3Url;
+    private HashMap<String, String> s3ScriptToUrl = new HashMap<String, String>();
 
     public PipelineProcessor(AbstractBuild build, Launcher launcher, BuildListener listener) {
         this.listener = listener;
@@ -43,6 +44,10 @@ public class PipelineProcessor {
 
     public void setS3Prefix(String s3Url) {
         this.s3Url = s3Url;
+    }
+
+    public Map<String, String> getS3Urls() {
+        return s3ScriptToUrl;
     }
 
     public boolean process(FilePath file) {
@@ -181,7 +186,6 @@ public class PipelineProcessor {
     private String substituteScriptUrls(String json, String pipelineName) {
         Pattern pattern = Pattern.compile("\\$\\{([^}]+)\\}");
         Matcher matcher = pattern.matcher(json);
-        HashMap<String, String> nameToUrl = new HashMap<String, String>();
 
         while (matcher.find()) {
             String token = matcher.group();
@@ -191,14 +195,14 @@ public class PipelineProcessor {
                     String scriptUrl = s3Url
                             + pipelineName.substring(0, pipelineName.lastIndexOf(".json"))
                             + "/" + potentialScript;
-                    nameToUrl.put(potentialScript, scriptUrl);
+                    s3ScriptToUrl.put(potentialScript, scriptUrl);
                 }
             } catch (Exception e) {
                 listener.error("Error in substituting script URL: " + e.getMessage());
             }
         }
 
-        return substituteMapValues(json, nameToUrl);
+        return substituteMapValues(json, s3ScriptToUrl);
     }
 
     /**

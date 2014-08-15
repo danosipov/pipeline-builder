@@ -3,9 +3,13 @@ package com.shazam.dataengineering.pipelinebuilder;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.datapipeline.DataPipelineClient;
 import com.amazonaws.services.datapipeline.model.*;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.PutObjectResult;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
@@ -95,6 +99,22 @@ public class AWSProxyTest {
         String result = executeGetPipelineIdMethod("p1-this-is-another-pipeline");
 
         assertEquals("", result);
+    }
+
+    @Test
+    public void uploadFileToS3UrlShouldReturnTrueForSuccessfulUpload() throws Exception {
+        AmazonS3 client = Mockito.mock(AmazonS3.class);
+
+        String bucketName = "test-bucket";
+        String key = "test/key/file.name";
+        String url = "s3://" + bucketName + "/" + key;
+        File file = Mockito.mock(File.class);
+
+        PutObjectRequest putRequest = new PutObjectRequest(bucketName, key, file);
+        PutObjectResult putResult = Mockito.mock(PutObjectResult.class);
+        Mockito.when(client.putObject(putRequest)).thenReturn(putResult);
+
+        assertTrue(AWSProxy.uploadFileToS3Url(client, url, file));
     }
 
 

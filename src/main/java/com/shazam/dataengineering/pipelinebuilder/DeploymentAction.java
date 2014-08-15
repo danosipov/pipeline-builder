@@ -5,6 +5,8 @@ import com.amazonaws.services.datapipeline.DataPipelineClient;
 import com.amazonaws.services.datapipeline.model.ValidatePipelineDefinitionResult;
 import com.amazonaws.services.datapipeline.model.ValidationError;
 import com.amazonaws.services.datapipeline.model.ValidationWarning;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
 import hudson.FilePath;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
@@ -15,13 +17,16 @@ import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 
 import javax.servlet.ServletException;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class DeploymentAction implements Action {
     private AbstractProject project;
     private AbstractBuild build;
+    private Map<String, String> s3Urls;
     private List<Run.Artifact> artifacts;
     private AWSCredentials credentials;
 
@@ -31,9 +36,10 @@ public class DeploymentAction implements Action {
     private DeploymentException lastException;
     private List<String> clientMessages = new ArrayList<String>();
 
-    public DeploymentAction(AbstractBuild build, AWSCredentials awsCredentials) {
+    public DeploymentAction(AbstractBuild build, Map<String, String> s3Urls, AWSCredentials awsCredentials) {
         this.project = build.getProject();
         this.build = build;
+        this.s3Urls = s3Urls;
         this.artifacts = build.getArtifacts();
         this.credentials = awsCredentials;
     }
@@ -72,6 +78,10 @@ public class DeploymentAction implements Action {
 
     public boolean isStartDatePast() {
         return pipelineObject != null && PipelineObject.isPast(pipelineObject.getScheduleDate());
+    }
+
+    public boolean hasScriptsToDeploy() {
+        return s3Urls.size() > 0;
     }
 
     public List<String> getPipelines() {
@@ -147,10 +157,10 @@ public class DeploymentAction implements Action {
     public void doDeploy(StaplerRequest req, StaplerResponse resp) throws ServletException, IOException {
         DataPipelineClient client = new DataPipelineClient(credentials);
         try {
-            // TODO: Deploy scripts
             String pipelineId = createNewPipeline(client);
             validateNewPipeline(pipelineId, client);
             uploadNewPipeline(pipelineId, client);
+            deployScriptsToS3();
             removeOldPipeline(client);
             activateNewPipeline(pipelineId, client);
             resp.forward(this, "report", req);
@@ -160,6 +170,27 @@ public class DeploymentAction implements Action {
             }
             resp.forward(this, "error", req);
         }
+    }
+
+    private void deployScriptsToS3() {
+        String pathPrefix = build.getArtifactsDir().getPath() + "/scripts/";
+        AmazonS3 s3Client = new AmazonS3Client(credentials);
+        for (String filename : s3Urls.keySet()) {
+            File file = new File(pathPrefix + filename);
+            if (file.exists()) {
+                String url = s3Urls.get(filename);
+                clientMessages.add(String.format("[INFO] Uploading %s to %s", filename, url));
+                boolean result = AWSProxy.uploadFileToS3Url(s3Client, url, file);
+                if (result) {
+                    clientMessages.add(String.format("[INFO] Upload successful!"));
+                } else {
+                    clientMessages.add(String.format("[ERROR] Upload failed!"));
+                }
+            } else {
+                clientMessages.add(String.format("[ERROR] Unable to find %s in artifacts", filename));
+            }
+        }
+
     }
 
     private PipelineObject getPipelineByName(String pipelineName) throws IOException {
@@ -172,6 +203,10 @@ public class DeploymentAction implements Action {
         }
 
         return null;
+    }
+
+    private String getPipelineName() {
+        return pipelineFile.substring(0, pipelineFile.lastIndexOf(".json"));
     }
 
     private void activateNewPipeline(String pipelineId, DataPipelineClient client) throws DeploymentException {
@@ -219,9 +254,8 @@ public class DeploymentAction implements Action {
     }
 
     private String createNewPipeline(DataPipelineClient client) throws DeploymentException {
-        String pipelineName = pipelineFile.substring(0, pipelineFile.lastIndexOf(".json"));
         AWSProxy proxy = new AWSProxy(client);
-        return proxy.createPipeline(pipelineName);
+        return proxy.createPipeline(getPipelineName());
     }
 
     private void removeOldPipeline(DataPipelineClient client) throws DeploymentException {

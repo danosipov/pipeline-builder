@@ -14,6 +14,9 @@
                                     <br /><b>WARNING: </b> Scheduled date is in the past. Backfill may occur
                                 </j:if>
                             </li>
+                            <j:if test="${it.hasScriptsToDeploy()}">
+                                <li>Deploy scripts to S3</li>
+                            </j:if>
                             <j:if test="${it.pipelineToRemoveId}">
                                 <li>Remove old pipeline ${it.pipelineToRemoveId}</li>
                             </j:if>

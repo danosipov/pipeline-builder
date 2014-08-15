@@ -3,8 +3,14 @@ package com.shazam.dataengineering.pipelinebuilder;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.datapipeline.DataPipelineClient;
 import com.amazonaws.services.datapipeline.model.*;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.PutObjectResult;
 
+import java.io.File;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Proxy class for the AWS SDK
@@ -15,6 +21,24 @@ public class AWSProxy {
 
     public AWSProxy(DataPipelineClient dataPipelineClient) {
         this.client = dataPipelineClient;
+    }
+
+    public static boolean uploadFileToS3Url(AmazonS3 client, String url, File file) {
+        try {
+            Pattern pattern = Pattern.compile("://([^/]+)/(.*)");
+            Matcher matcher = pattern.matcher(url);
+            if (matcher.find()) {
+                String bucketName = matcher.group(0);
+                String key = matcher.group(1);
+                PutObjectRequest putRequest = new PutObjectRequest(bucketName, key, file);
+                PutObjectResult result = client.putObject(putRequest);
+                return true;
+            } else {
+                return false;
+            }
+        } catch (RuntimeException e) {
+            return false;
+        }
     }
 
     public boolean removePipeline(String pipelineId) {
