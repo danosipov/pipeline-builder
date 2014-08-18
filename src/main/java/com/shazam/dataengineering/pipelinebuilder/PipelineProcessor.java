@@ -213,16 +213,8 @@ public class PipelineProcessor {
      * @return
      */
     private boolean archiveFile(String filename) throws IOException, InterruptedException {
-        // First look in current workspace
-        List<FilePath> pathList = build.getWorkspace().list();
-        for (FilePath path : pathList) {
-            if (path.getName().equals(filename)) {
-                FilePath newPath = new FilePath(new FilePath(build.getArtifactsDir()),
-                        "scripts/" + filename);
-                newPath.copyFrom(path.read());
-                return true;
-            }
-        }
+        // First look recursively in current workspace
+        scanDirectory(build.getWorkspace(), filename);
 
         // Second look in upstream projects
         Set<AbstractProject> upstreamProjects = build.getUpstreamBuilds().keySet();
@@ -237,6 +229,21 @@ public class PipelineProcessor {
                 }
             }
 
+        }
+
+        return false;
+    }
+
+    private boolean scanDirectory(FilePath directory, String filename) throws IOException, InterruptedException {
+        for (FilePath path : directory.list()) {
+            if (path.isDirectory() && scanDirectory(path, filename)) {
+                return true;
+            } else if (path.getName().equals(filename)) {
+                FilePath newPath = new FilePath(new FilePath(build.getArtifactsDir()),
+                        "scripts/" + filename);
+                newPath.copyFrom(path.read());
+                return true;
+            }
         }
 
         return false;
