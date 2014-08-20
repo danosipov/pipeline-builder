@@ -28,7 +28,7 @@
                                     <st:include it="${parameterDefinition}"	page="${parameterDefinition.descriptor.valuePage}" />
                                 </j:forEach>
                             </j:if>
-                            <tr><td colspan="3"><f:submit value="${%Schedule Release Build}"/></td></tr>
+                            <tr><td colspan="3"><f:submit value="${%Deploy Pipeline}"/></td></tr>
                         </f:section>
                     </f:form>
                 </td></tr>
