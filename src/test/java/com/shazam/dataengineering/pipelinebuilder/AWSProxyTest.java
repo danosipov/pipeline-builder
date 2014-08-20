@@ -7,6 +7,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.io.File;
@@ -110,11 +111,14 @@ public class AWSProxyTest {
         String url = "s3://" + bucketName + "/" + key;
         File file = Mockito.mock(File.class);
 
-        PutObjectRequest putRequest = new PutObjectRequest(bucketName, key, file);
+        ArgumentCaptor<PutObjectRequest> argument = ArgumentCaptor.forClass(PutObjectRequest.class);
+
         PutObjectResult putResult = Mockito.mock(PutObjectResult.class);
-        Mockito.when(client.putObject(putRequest)).thenReturn(putResult);
+        Mockito.when(client.putObject(argument.capture())).thenReturn(putResult);
 
         assertTrue(AWSProxy.uploadFileToS3Url(client, url, file));
+        assertEquals(bucketName, argument.getValue().getBucketName());
+        assertEquals(key, argument.getValue().getKey());
     }
 
 

@@ -214,7 +214,9 @@ public class PipelineProcessor {
      */
     private boolean archiveFile(String filename) throws IOException, InterruptedException {
         // First look recursively in current workspace
-        scanDirectory(build.getWorkspace(), filename);
+        if (scanDirectory(build.getWorkspace(), filename)) {
+            return true;
+        }
 
         // Second look in upstream projects
         Set<AbstractProject> upstreamProjects = build.getUpstreamBuilds().keySet();

@@ -17,7 +17,7 @@
                             <j:if test="${it.hasScriptsToDeploy()}">
                                 <li>Deploy scripts to S3</li>
                             </j:if>
-                            <j:if test="${it.pipelineToRemoveId}">
+                            <j:if test="${it.hasPipelineToRemove()}">
                                 <li>Remove old pipeline ${it.pipelineToRemoveId}</li>
                             </j:if>
                             <li>Activate new pipeline</li>

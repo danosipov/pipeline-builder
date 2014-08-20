@@ -64,6 +64,10 @@ public class DeploymentAction implements Action {
         return pipelineToRemoveId;
     }
 
+    public boolean hasPipelineToRemove() {
+        return pipelineToRemoveId != null;
+    }
+
     public List<String> getClientMessages() {
         return clientMessages;
     }
@@ -110,7 +114,15 @@ public class DeploymentAction implements Action {
             if (pipelineFile != null) {
                 pipelineObject = getPipelineByName(pipelineFile);
             } else {
-                Run.Artifact artifact = artifacts.get(0); // TODO: Remove this hack
+                Run.Artifact artifact = null;
+                // Get the pipeline file, any pipeline file
+                // TODO: This makes a lot of assumptions, need to fix.
+                for (Run.Artifact allegedPipeline : artifacts) {
+                    if (allegedPipeline.getFileName().endsWith(".json")) {
+                        artifact = allegedPipeline;
+                    }
+                }
+
                 pipelineObject = new PipelineObject(new FilePath(artifact.getFile()).readToString());
             }
         }
@@ -172,7 +184,7 @@ public class DeploymentAction implements Action {
         }
     }
 
-    private void deployScriptsToS3() {
+    private void deployScriptsToS3() throws DeploymentException {
         String pathPrefix = build.getArtifactsDir().getPath() + "/scripts/";
         AmazonS3 s3Client = new AmazonS3Client(credentials);
         for (String filename : s3Urls.keySet()) {

@@ -23,13 +23,13 @@ public class AWSProxy {
         this.client = dataPipelineClient;
     }
 
-    public static boolean uploadFileToS3Url(AmazonS3 client, String url, File file) {
+    public static boolean uploadFileToS3Url(AmazonS3 client, String url, File file) throws DeploymentException {
         try {
             Pattern pattern = Pattern.compile("://([^/]+)/(.*)");
             Matcher matcher = pattern.matcher(url);
             if (matcher.find()) {
-                String bucketName = matcher.group(0);
-                String key = matcher.group(1);
+                String bucketName = matcher.group(1);
+                String key = matcher.group(2);
                 PutObjectRequest putRequest = new PutObjectRequest(bucketName, key, file);
                 PutObjectResult result = client.putObject(putRequest);
                 return true;
@@ -37,7 +37,7 @@ public class AWSProxy {
                 return false;
             }
         } catch (RuntimeException e) {
-            return false;
+            throw new DeploymentException(e);
         }
     }
 
