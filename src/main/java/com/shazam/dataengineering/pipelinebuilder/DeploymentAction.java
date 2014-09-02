@@ -123,9 +123,13 @@ public class DeploymentAction implements Action {
                     }
                 }
 
-                pipelineObject = new PipelineObject(new FilePath(artifact.getFile()).readToString());
+                if (artifact != null) {
+                    pipelineObject = new PipelineObject(
+                            new FilePath(artifact.getFile()).readToString());
+                }
             }
         }
+
         if (pipelineObject != null) {
             return pipelineObject.getScheduleDate();
         } else {
@@ -133,8 +137,10 @@ public class DeploymentAction implements Action {
         }
     }
 
-    // TODO: Warn if currently executing!
     public void doConfirmProcess(StaplerRequest req, StaplerResponse resp) throws IOException, ServletException {
+        // Clear out previous warnings
+        clientMessages.clear();
+
         JSONObject formData = req.getSubmittedForm();
         pipelineFile = formData.getString("pipeline");
         String startDate = formData.getString("scheduleDate");
@@ -160,6 +166,7 @@ public class DeploymentAction implements Action {
         try {
             DataPipelineClient client = new DataPipelineClient(credentials);
             pipelineToRemoveId = getPipelineId(pipelineFile, client);
+            // TODO: Warn if currently executing!
         } catch (DeploymentException e) {
             pipelineToRemoveId = "";
         }
