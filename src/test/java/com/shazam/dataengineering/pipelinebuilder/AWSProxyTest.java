@@ -3,6 +3,7 @@ package com.shazam.dataengineering.pipelinebuilder;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.datapipeline.DataPipelineClient;
 import com.amazonaws.services.datapipeline.model.*;
+import com.amazonaws.services.datapipeline.model.PipelineObject;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
@@ -121,6 +122,68 @@ public class AWSProxyTest {
         assertEquals(key, argument.getValue().getKey());
     }
 
+    @Test
+    public void hasRunningTasksShouldReturnTrueForObjectsInRunningState() throws Exception {
+        List<String> objectIdList1 = new ArrayList<String>();
+        objectIdList1.add("obj1");
+        objectIdList1.add("obj2");
+        List<String> objectIdList2 = new ArrayList<String>();
+        objectIdList2.add("obj3");
+
+        List<PipelineObject> objectList1 = new ArrayList<PipelineObject>();
+        objectList1.add(new PipelineObject().withId("obj1").withFields(
+                        new Field().withKey("@status").withStringValue("FINISHED"),
+                        new Field().withKey("type").withStringValue("EmrCluster")
+                ));
+        objectList1.add(new PipelineObject().withId("obj2").withFields(
+                new Field().withKey("@attemptCount").withStringValue("1"),
+                new Field().withKey("@status").withStringValue("FINISHED")
+        ));
+        List<PipelineObject> objectList2 = new ArrayList<PipelineObject>();
+        objectList2.add(new PipelineObject().withId("obj3").withFields(
+                new Field().withKey("@status").withStringValue("RUNNING")
+        ));
+
+        QueryObjectsResult queryResult1 = Mockito.mock(QueryObjectsResult.class);
+        Mockito.when(queryResult1.getIds()).thenReturn(objectIdList1);
+        Mockito.when(queryResult1.getHasMoreResults()).thenReturn(true);
+        Mockito.when(queryResult1.getMarker()).thenReturn("testMarker");
+        QueryObjectsResult queryResult2 = Mockito.mock(QueryObjectsResult.class);
+        Mockito.when(queryResult2.getIds()).thenReturn(objectIdList2);
+        Mockito.when(queryResult2.getHasMoreResults()).thenReturn(false);
+
+        DataPipelineClient dataPipelineClient = Mockito.mock(DataPipelineClient.class);
+
+        QueryObjectsRequest request1 = new QueryObjectsRequest()
+                .withPipelineId("test-pipeline");
+        QueryObjectsRequest request2 = new QueryObjectsRequest()
+                .withPipelineId("test-pipeline")
+                .withMarker("testMarker");
+        Mockito.when(dataPipelineClient.queryObjects(request1))
+                .thenReturn(queryResult1);
+        Mockito.when(dataPipelineClient.queryObjects(request2))
+                .thenReturn(queryResult2);
+
+        DescribeObjectsResult describeResult1 = Mockito.mock(DescribeObjectsResult.class);
+        Mockito.when(describeResult1.getPipelineObjects()).thenReturn(objectList1);
+        DescribeObjectsResult describeResult2 = Mockito.mock(DescribeObjectsResult.class);
+        Mockito.when(describeResult2.getPipelineObjects()).thenReturn(objectList2);
+
+        DescribeObjectsRequest describeRequest1 = new DescribeObjectsRequest()
+                .withPipelineId("test-pipeline")
+                .withObjectIds(objectIdList1);
+        DescribeObjectsRequest describeRequest2 = new DescribeObjectsRequest()
+                .withPipelineId("test-pipeline")
+                .withObjectIds(objectIdList2);
+        Mockito.when(dataPipelineClient.describeObjects(describeRequest1))
+                .thenReturn(describeResult1);
+        Mockito.when(dataPipelineClient.describeObjects(describeRequest2))
+                .thenReturn(describeResult2);
+
+        AWSProxy proxy = new AWSProxy(dataPipelineClient);
+
+        assertTrue(proxy.hasRunningTasks("test-pipeline"));
+    }
 
 
     private String executeGetPipelineIdMethod(String regex)

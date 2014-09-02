@@ -8,6 +8,7 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
 
 import java.io.File;
+import java.util.List;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -96,6 +97,44 @@ public class AWSProxy {
             client.activatePipeline(request);
         } catch (RuntimeException e) {
             throw new DeploymentException(e);
+        }
+    }
+
+    public DescribeObjectsResult describeTasks(String pipelineId, List<String> objectIds) {
+        DescribeObjectsRequest request = new DescribeObjectsRequest()
+                .withPipelineId(pipelineId)
+                .withObjectIds(objectIds);
+        return client.describeObjects(request);
+    }
+
+    public boolean hasRunningTasks(String pipelineId) {
+        return hasRunningTasks(pipelineId, null);
+    }
+
+    public boolean hasRunningTasks(String pipelineId, String marker) {
+        QueryObjectsRequest request = new QueryObjectsRequest()
+                .withPipelineId(pipelineId);
+        if (marker != null) {
+            request.setMarker(marker);
+        }
+
+        QueryObjectsResult queryResult = client.queryObjects(request);
+
+        DescribeObjectsResult describeResult = describeTasks(pipelineId, queryResult.getIds());
+        List<com.amazonaws.services.datapipeline.model.PipelineObject> tasks = describeResult.getPipelineObjects();
+        for (com.amazonaws.services.datapipeline.model.PipelineObject task: tasks) {
+            for (Field field: task.getFields()) {
+                // Is task running?
+                if (field.getKey().equals("@status") && field.getStringValue().equals("RUNNING")) {
+                    return true;
+                }
+            }
+        }
+
+        if (queryResult.getHasMoreResults()) {
+            return hasRunningTasks(pipelineId, queryResult.getMarker());
+        } else {
+            return false;
         }
     }
 

@@ -18,7 +18,11 @@
                                 <li>Deploy scripts to S3</li>
                             </j:if>
                             <j:if test="${it.hasPipelineToRemove()}">
-                                <li>Remove old pipeline ${it.pipelineToRemoveId}</li>
+                                <li>Remove old pipeline ${it.pipelineToRemoveId}
+                                    <j:if test="${it.oldPipelineHasRunningTasks()}">
+                                        <br /><b>WARNING: </b> Old pipeline is currently running. Execution will be terminated.
+                                    </j:if>
+                                </li>
                             </j:if>
                             <li>Activate new pipeline</li>
                         </ol>

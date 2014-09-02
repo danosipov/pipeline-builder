@@ -65,7 +65,7 @@ public class DeploymentAction implements Action {
     }
 
     public boolean hasPipelineToRemove() {
-        return pipelineToRemoveId != null;
+        return pipelineToRemoveId != null && !pipelineToRemoveId.isEmpty();
     }
 
     public List<String> getClientMessages() {
@@ -86,6 +86,13 @@ public class DeploymentAction implements Action {
 
     public boolean hasScriptsToDeploy() {
         return s3Urls.size() > 0;
+    }
+
+    public boolean oldPipelineHasRunningTasks() {
+        DataPipelineClient client = new DataPipelineClient(credentials);
+        AWSProxy proxy = new AWSProxy(client);
+
+        return proxy.hasRunningTasks(pipelineToRemoveId);
     }
 
     public List<String> getPipelines() {
@@ -165,8 +172,11 @@ public class DeploymentAction implements Action {
         // Find previously deployed pipeline.
         try {
             DataPipelineClient client = new DataPipelineClient(credentials);
+
             pipelineToRemoveId = getPipelineId(pipelineFile, client);
-            // TODO: Warn if currently executing!
+            if (oldPipelineHasRunningTasks()) {
+                clientMessages.add("[WARN] Old pipeline is currently running. Execution will be terminated.");
+            }
         } catch (DeploymentException e) {
             pipelineToRemoveId = "";
         }
