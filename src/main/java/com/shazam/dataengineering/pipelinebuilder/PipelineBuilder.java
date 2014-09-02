@@ -13,8 +13,10 @@ import hudson.security.PermissionGroup;
 import hudson.security.PermissionScope;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
+import hudson.util.FormValidation;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
 import java.io.IOException;
@@ -105,7 +107,6 @@ public class PipelineBuilder extends Builder {
     }
 
     public void setS3Prefix(String s3Prefix) {
-        // TODO: add validation to this field (needs to start with s3://)
         if (s3Prefix.endsWith("/")) {
             this.s3Prefix = s3Prefix;
         } else {
@@ -159,6 +160,15 @@ public class PipelineBuilder extends Builder {
         public boolean isApplicable(Class<? extends AbstractProject> aClass) {
             // Indicates that this builder can be used with all kinds of project types
             return true;
+        }
+
+        public FormValidation doCheckS3Prefix(@QueryParameter String value) {
+            if (!value.isEmpty() && !value.matches("^s3://([^/]+)/(.*)")) {
+                return FormValidation.error("URL must be in the form \"s3://bucket/key/\"");
+            }
+            else {
+                return FormValidation.ok();
+            }
         }
 
         /**
