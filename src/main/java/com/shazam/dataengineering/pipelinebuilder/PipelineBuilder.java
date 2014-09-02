@@ -54,7 +54,12 @@ public class PipelineBuilder extends Builder {
         FilePath input = ws.child(file);
 
         PipelineProcessor processor = new PipelineProcessor(build, launcher, listener);
-        processor.setEnvironments(configParams);
+        if (configParams.length > 0) {
+            processor.setEnvironments(configParams);
+        } else {
+            listener.getLogger().println("[WARN] No environments for AWS Data pipeline defined, skipping");
+            return true;
+        }
         processor.setS3Prefix(s3Prefix);
 
         boolean result = processor.process(input);

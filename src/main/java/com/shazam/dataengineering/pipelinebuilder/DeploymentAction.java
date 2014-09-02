@@ -133,6 +133,7 @@ public class DeploymentAction implements Action {
         }
     }
 
+    // TODO: Warn if currently executing!
     public void doConfirmProcess(StaplerRequest req, StaplerResponse resp) throws IOException, ServletException {
         JSONObject formData = req.getSubmittedForm();
         pipelineFile = formData.getString("pipeline");

@@ -96,6 +96,7 @@ public class PipelineProcessor {
     }
 
     private boolean storeProcessedFile(String fileName, String json, Environment environment) {
+        // TODO: Convert multiline (ex: SQL) to single line
         String newJson = performSubstitutions(json, fileName, environment);
         List<String> warnings = warnForUnreplacedKeys(newJson);
         for (String warning: warnings) {
@@ -241,6 +242,7 @@ public class PipelineProcessor {
             if (path.isDirectory() && scanDirectory(path, filename)) {
                 return true;
             } else if (path.getName().equals(filename)) {
+                listener.getLogger().println("[INFO] Found an artifact at " + path.getName());
                 FilePath newPath = new FilePath(new FilePath(build.getArtifactsDir()),
                         "scripts/" + filename);
                 newPath.copyFrom(path.read());
