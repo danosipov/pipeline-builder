@@ -97,7 +97,8 @@ public class PipelineProcessor {
 
     private boolean storeProcessedFile(String fileName, String json, Environment environment) {
         // TODO: Convert multiline (ex: SQL) to single line
-        String newJson = performSubstitutions(json, fileName, environment);
+        String singleLineJson = performInlining(json);
+        String newJson = performSubstitutions(singleLineJson, fileName, environment);
         List<String> warnings = warnForUnreplacedKeys(newJson);
         for (String warning: warnings) {
             listener.getLogger().println("[WARN] " + warning);
@@ -132,6 +133,22 @@ public class PipelineProcessor {
         }
 
         return warnings;
+    }
+
+    private String performInlining(String json) {
+        Pattern pattern = Pattern.compile("\"\"\"([^\"]+)\"\"\"");
+        Matcher matcher = pattern.matcher(json);
+        StringBuffer jsonBuffer = new StringBuffer();
+
+        while (matcher.find()) {
+            String longText = matcher.group();
+            String sql = longText.substring(2, longText.length() - 2);
+            String replacement = sql.replace("\n", "");
+            matcher.appendReplacement(jsonBuffer, replacement);
+        }
+        matcher.appendTail(jsonBuffer);
+
+        return jsonBuffer.toString();
     }
 
     /**

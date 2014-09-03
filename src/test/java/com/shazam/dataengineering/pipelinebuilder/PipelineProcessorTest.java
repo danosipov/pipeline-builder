@@ -78,6 +78,23 @@ public class PipelineProcessorTest {
         assertEquals("Unreplaced token found in pipeline object: ${key1}", warnings.get(0));
     }
 
+    @Test
+    @WithoutJenkins
+    public void inliningShouldProduceValidJson() throws Exception {
+        PipelineProcessor processor = getDefaultPipelineProcessor();
+        String json = "{\"inlineThis\":\"\"\"multi\nline\ntext\"\"\"}";
+        String expected = "{\"inlineThis\":\"multilinetext\"}";
+
+        Method method = processor.getClass().getDeclaredMethod("performInlining", String.class);
+        method.setAccessible(true);
+
+        String result = (String) method.invoke(processor, json);
+        assertEquals(expected, result);
+
+        PipelineObject pipelineObject = new PipelineObject(result);
+        assertTrue(pipelineObject.isValid());
+    }
+
     private PipelineProcessor getDefaultPipelineProcessor() {
         BuildListener listener = Mockito.mock(BuildListener.class);
         Launcher launcher = Mockito.mock(Launcher.class);
