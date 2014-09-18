@@ -49,7 +49,7 @@ public class DeploymentActionTest {
         DataPipelineClient dataPipelineClient = mock(DataPipelineClient.class);
         DeploymentAction action = new DeploymentAction(
                 getMockAbstractBuild(),
-                new HashMap<String, String>(),
+                new HashMap<S3Environment, String>(),
                 new AnonymousAWSCredentials());
         DeletePipelineRequest request = new DeletePipelineRequest().withPipelineId("test");
 
@@ -70,7 +70,7 @@ public class DeploymentActionTest {
         DataPipelineClient dataPipelineClient = mock(DataPipelineClient.class);
         DeploymentAction action = new DeploymentAction(
                 getMockAbstractBuild(),
-                new HashMap<String, String>(),
+                new HashMap<S3Environment, String>(),
                 new AnonymousAWSCredentials());
         CreatePipelineResult createPipelineResult = new CreatePipelineResult().withPipelineId("test12345");
         when(dataPipelineClient.createPipeline(any(CreatePipelineRequest.class))).thenReturn(createPipelineResult);
@@ -107,7 +107,7 @@ public class DeploymentActionTest {
 
         DeploymentAction action = new DeploymentAction(
                 getMockAbstractBuild(),
-                new HashMap<String, String>(),
+                new HashMap<S3Environment, String>(),
                 new AnonymousAWSCredentials());
 
         Field pipelineFileField = action.getClass().getDeclaredField("pipelineObject");
@@ -150,7 +150,7 @@ public class DeploymentActionTest {
 
         DeploymentAction action = new DeploymentAction(
                 getMockAbstractBuild(),
-                new HashMap<String, String>(),
+                new HashMap<S3Environment, String>(),
                 new AnonymousAWSCredentials());
 
         Field pipelineFileField = action.getClass().getDeclaredField("pipelineObject");
@@ -178,7 +178,7 @@ public class DeploymentActionTest {
 
         DeploymentAction action = new DeploymentAction(
                 getMockAbstractBuild(),
-                new HashMap<String, String>(),
+                new HashMap<S3Environment, String>(),
                 new AnonymousAWSCredentials());
 
         Field pipelineFileField = action.getClass().getDeclaredField("pipelineObject");
@@ -204,7 +204,7 @@ public class DeploymentActionTest {
 
         DeploymentAction action = new DeploymentAction(
                 getMockAbstractBuild(),
-                new HashMap<String, String>(),
+                new HashMap<S3Environment, String>(),
                 new AnonymousAWSCredentials());
 
         Method method = action.getClass().getDeclaredMethod("activateNewPipeline", String.class, DataPipelineClient.class);
@@ -223,7 +223,7 @@ public class DeploymentActionTest {
         pipelineList.add(new PipelineIdName().withId("test2").withName("d2-this-is-a-test-pipeline-1"));
         DeploymentAction action = new DeploymentAction(
                 getMockAbstractBuild(),
-                new HashMap<String, String>(),
+                new HashMap<S3Environment, String>(),
                 new AnonymousAWSCredentials());
         DataPipelineClient client = getMockDataPipelineClient(pipelineList);
 

@@ -26,7 +26,7 @@ public class PipelineProcessor {
     private String name;
     private int buildNumber;
     private String s3Url;
-    private HashMap<String, String> s3ScriptToUrl = new HashMap<String, String>();
+    private HashMap<S3Environment, String> s3ScriptToUrl = new HashMap<S3Environment, String>();
 
     public PipelineProcessor(AbstractBuild build, Launcher launcher, BuildListener listener) {
         this.listener = listener;
@@ -46,7 +46,7 @@ public class PipelineProcessor {
         this.s3Url = s3Url;
     }
 
-    public Map<String, String> getS3Urls() {
+    public Map<S3Environment, String> getS3Urls() {
         return s3ScriptToUrl;
     }
 
@@ -96,7 +96,6 @@ public class PipelineProcessor {
     }
 
     private boolean storeProcessedFile(String fileName, String json, Environment environment) {
-        // TODO: Convert multiline (ex: SQL) to single line
         String singleLineJson = performInlining(json);
         String newJson = performSubstitutions(singleLineJson, fileName, environment);
         List<String> warnings = warnForUnreplacedKeys(newJson);
@@ -135,6 +134,18 @@ public class PipelineProcessor {
         return warnings;
     }
 
+    /**
+     * Convert multiline strings into single line string
+     * Result should be a valid JSON.
+     *
+     * Example:
+     * """ test
+     *     string""" => " test    string"
+     * NOTE: Spaces get preserved
+     *
+     * @param json
+     * @return
+     */
     private String performInlining(String json) {
         Pattern pattern = Pattern.compile("\"\"\"([^\"]+)\"\"\"");
         Matcher matcher = pattern.matcher(json);
@@ -204,6 +215,7 @@ public class PipelineProcessor {
     private String substituteScriptUrls(String json, String pipelineName) {
         Pattern pattern = Pattern.compile("\\$\\{([^}]+)\\}");
         Matcher matcher = pattern.matcher(json);
+        HashMap<String, String> substitutions = new HashMap<String, String>();
 
         while (matcher.find()) {
             String token = matcher.group();
@@ -213,14 +225,15 @@ public class PipelineProcessor {
                     String scriptUrl = s3Url
                             + pipelineName.substring(0, pipelineName.lastIndexOf(".json"))
                             + "/" + potentialScript;
-                    s3ScriptToUrl.put(potentialScript, scriptUrl);
+                    s3ScriptToUrl.put(new S3Environment(pipelineName, potentialScript), scriptUrl);
+                    substitutions.put(potentialScript, scriptUrl);
                 }
             } catch (Exception e) {
                 listener.error("Error in substituting script URL: " + e.getMessage());
             }
         }
 
-        return substituteMapValues(json, s3ScriptToUrl);
+        return substituteMapValues(json, substitutions);
     }
 
     /**
@@ -231,6 +244,13 @@ public class PipelineProcessor {
      * @return
      */
     private boolean archiveFile(String filename) throws IOException, InterruptedException {
+        FilePath newPath = new FilePath(new FilePath(build.getArtifactsDir()),
+                "scripts/" + filename);
+        if (newPath.exists()) {
+            // File already copied (perhaps for a different environment
+            return true;
+        }
+
         // First look recursively in current workspace
         if (scanDirectory(build.getWorkspace(), filename)) {
             return true;
@@ -242,8 +262,6 @@ public class PipelineProcessor {
             List<Run.Artifact> artifacts = project.getLastBuild().getArtifacts();
             for (Run.Artifact artifact : artifacts) {
                 if (artifact.getFileName().equals(filename)) {
-                    FilePath newPath = new FilePath(new FilePath(build.getArtifactsDir()),
-                            "scripts/" + filename);
                     newPath.copyFrom(new FilePath(artifact.getFile()));
                     return true;
                 }

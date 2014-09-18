@@ -26,7 +26,7 @@ import java.util.Map;
 public class DeploymentAction implements Action {
     private AbstractProject project;
     private AbstractBuild build;
-    private Map<String, String> s3Urls;
+    private Map<S3Environment, String> s3Urls;
     private List<Run.Artifact> artifacts;
     private AWSCredentials credentials;
 
@@ -36,7 +36,7 @@ public class DeploymentAction implements Action {
     private DeploymentException lastException;
     private List<String> clientMessages = new ArrayList<String>();
 
-    public DeploymentAction(AbstractBuild build, Map<String, String> s3Urls, AWSCredentials awsCredentials) {
+    public DeploymentAction(AbstractBuild build, Map<S3Environment, String> s3Urls, AWSCredentials awsCredentials) {
         this.project = build.getProject();
         this.build = build;
         this.s3Urls = s3Urls;
@@ -205,22 +205,24 @@ public class DeploymentAction implements Action {
     private void deployScriptsToS3() throws DeploymentException {
         String pathPrefix = build.getArtifactsDir().getPath() + "/scripts/";
         AmazonS3 s3Client = new AmazonS3Client(credentials);
-        for (String filename : s3Urls.keySet()) {
-            File file = new File(pathPrefix + filename);
-            if (file.exists()) {
-                String url = s3Urls.get(filename);
-                clientMessages.add(String.format("[INFO] Uploading %s to %s", filename, url));
-                boolean result = AWSProxy.uploadFileToS3Url(s3Client, url, file);
-                if (result) {
-                    clientMessages.add(String.format("[INFO] Upload successful!"));
+        for (S3Environment env : s3Urls.keySet()) {
+            if (env.pipelineName.equals(pipelineFile)) {
+                String filename = env.scriptName;
+                File file = new File(pathPrefix + filename);
+                if (file.exists()) {
+                    String url = s3Urls.get(filename);
+                    clientMessages.add(String.format("[INFO] Uploading %s to %s", filename, url));
+                    boolean result = AWSProxy.uploadFileToS3Url(s3Client, url, file);
+                    if (result) {
+                        clientMessages.add(String.format("[INFO] Upload successful!"));
+                    } else {
+                        clientMessages.add(String.format("[ERROR] Upload failed!"));
+                    }
                 } else {
-                    clientMessages.add(String.format("[ERROR] Upload failed!"));
+                    clientMessages.add(String.format("[ERROR] Unable to find %s in artifacts", filename));
                 }
-            } else {
-                clientMessages.add(String.format("[ERROR] Unable to find %s in artifacts", filename));
             }
         }
-
     }
 
     private PipelineObject getPipelineByName(String pipelineName) throws IOException {
