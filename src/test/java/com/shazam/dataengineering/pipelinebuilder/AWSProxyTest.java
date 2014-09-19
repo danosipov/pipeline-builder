@@ -155,8 +155,10 @@ public class AWSProxyTest {
         DataPipelineClient dataPipelineClient = Mockito.mock(DataPipelineClient.class);
 
         QueryObjectsRequest request1 = new QueryObjectsRequest()
+                .withSphere("ATTEMPT")
                 .withPipelineId("test-pipeline");
         QueryObjectsRequest request2 = new QueryObjectsRequest()
+                .withSphere("ATTEMPT")
                 .withPipelineId("test-pipeline")
                 .withMarker("testMarker");
         Mockito.when(dataPipelineClient.queryObjects(request1))

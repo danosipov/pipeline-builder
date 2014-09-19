@@ -113,6 +113,7 @@ public class AWSProxy {
 
     public boolean hasRunningTasks(String pipelineId, String marker) {
         QueryObjectsRequest request = new QueryObjectsRequest()
+                .withSphere("ATTEMPT")
                 .withPipelineId(pipelineId);
         if (marker != null) {
             request.setMarker(marker);
