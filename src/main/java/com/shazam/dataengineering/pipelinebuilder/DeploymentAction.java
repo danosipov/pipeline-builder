@@ -174,7 +174,7 @@ public class DeploymentAction implements Action {
             DataPipelineClient client = new DataPipelineClient(credentials);
 
             pipelineToRemoveId = getPipelineId(pipelineFile, client);
-            if (oldPipelineHasRunningTasks()) {
+            if (!pipelineToRemoveId.isEmpty() && oldPipelineHasRunningTasks()) {
                 clientMessages.add("[WARN] Old pipeline is currently running. Execution will be terminated.");
             }
         } catch (DeploymentException e) {
@@ -210,7 +210,7 @@ public class DeploymentAction implements Action {
                 String filename = env.scriptName;
                 File file = new File(pathPrefix + filename);
                 if (file.exists()) {
-                    String url = s3Urls.get(filename);
+                    String url = s3Urls.get(env);
                     clientMessages.add(String.format("[INFO] Uploading %s to %s", filename, url));
                     boolean result = AWSProxy.uploadFileToS3Url(s3Client, url, file);
                     if (result) {
