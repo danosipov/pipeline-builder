@@ -107,7 +107,7 @@ public class PipelineObject {
             for (Object object : objectArray) {
                 com.amazonaws.services.datapipeline.model.PipelineObject pipelineObject
                         = new com.amazonaws.services.datapipeline.model.PipelineObject();
-                HashSet<Field> fields = new HashSet<Field>();
+                LinkedHashSet<Field> fields = new LinkedHashSet<Field>();
                 JSONObject jsonObject = (JSONObject) object;
 
                 for (String key: (Set<String>) jsonObject.keySet()) {
@@ -132,7 +132,7 @@ public class PipelineObject {
         new GraphWriter().writeDOT(writer, this);
     }
 
-    private HashSet<Field> parseFields(HashSet<Field> accumulator, Object json, String key) {
+    private HashSet<Field> parseFields(LinkedHashSet<Field> accumulator, Object json, String key) {
         if (json instanceof String) {
             accumulator.add(new Field().withKey(key).withStringValue((String) json));
         } else if (json instanceof JSONArray) {

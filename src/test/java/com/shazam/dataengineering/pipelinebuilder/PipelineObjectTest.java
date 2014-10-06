@@ -50,6 +50,32 @@ public class PipelineObjectTest {
         assertEquals(validation.getJson(), obj.getJson());
     }
 
+    @Test
+    public void pipeline2shouldPlaceEMRStepsInSameOrder() throws Exception {
+        String json = IOUtils.toString(new FileInputStream(new File("src/test/resources/pipeline2.json")), "UTF-8");
+
+        PipelineObject obj = new PipelineObject(json);
+
+        List<com.amazonaws.services.datapipeline.model.PipelineObject> awsObjects = obj.getAWSObjects();
+        List<Field> fields = awsObjects.get(0).getFields();
+        int counter = 0;
+        for (Field field : fields) {
+            if (field.getKey().equals("step")) {
+                switch (counter++) {
+                    case 0:
+                        assertEquals("step 1", field.getStringValue());
+                        break;
+                    case 1:
+                        assertEquals("step 02", field.getStringValue());
+                        break;
+                    case 2:
+                        assertEquals("step three", field.getStringValue());
+                        break;
+                }
+            }
+        }
+    }
+
 
     @Test
     public void pipeline3shouldParseIntoAWSPipelineObjectCorrectly() throws Exception {
