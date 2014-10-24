@@ -147,14 +147,14 @@ public class PipelineProcessor {
      * @return
      */
     private String performInlining(String json) {
-        Pattern pattern = Pattern.compile("\"\"\"([^\"]+)\"\"\"");
+        Pattern pattern = Pattern.compile("\"\"\"(\\\\.|[^\\\"])+\"\"\"");
         Matcher matcher = pattern.matcher(json);
         StringBuffer jsonBuffer = new StringBuffer();
 
         while (matcher.find()) {
             String longText = matcher.group();
             String sql = longText.substring(2, longText.length() - 2);
-            String replacement = sql.replace("\n", "");
+            String replacement = sql.replace("\n", "").replace("\"", "\\\"");
             matcher.appendReplacement(jsonBuffer, replacement);
         }
         matcher.appendTail(jsonBuffer);

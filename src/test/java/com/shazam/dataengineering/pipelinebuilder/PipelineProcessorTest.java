@@ -95,6 +95,23 @@ public class PipelineProcessorTest {
         assertTrue(pipelineObject.isValid());
     }
 
+    @Test
+    @WithoutJenkins
+    public void inliningCommandsContainingQuotesShouldProduceValidJson() throws Exception {
+        PipelineProcessor processor = getDefaultPipelineProcessor();
+        String json = "{\"inlineThis\":\"\"\"multi\n\\\"line\\\"\ntext\"\"\"}";
+        String expected = "{\"inlineThis\":\"multi\\\"line\\\"text\"}";
+
+        Method method = processor.getClass().getDeclaredMethod("performInlining", String.class);
+        method.setAccessible(true);
+
+        String result = (String) method.invoke(processor, json);
+        assertEquals(expected, result);
+
+        PipelineObject pipelineObject = new PipelineObject(result);
+        assertTrue(pipelineObject.isValid());
+    }
+
     private PipelineProcessor getDefaultPipelineProcessor() {
         BuildListener listener = Mockito.mock(BuildListener.class);
         Launcher launcher = Mockito.mock(Launcher.class);
