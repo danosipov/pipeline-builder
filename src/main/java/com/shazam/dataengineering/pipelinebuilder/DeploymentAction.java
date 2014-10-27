@@ -184,7 +184,7 @@ public class DeploymentAction implements Action {
         resp.forward(this, "confirm", req);
     }
 
-    public void doDeploy(StaplerRequest req, StaplerResponse resp) throws ServletException, IOException {
+    public synchronized void doDeploy(StaplerRequest req, StaplerResponse resp) throws ServletException, IOException {
         DataPipelineClient client = new DataPipelineClient(credentials);
         try {
             String pipelineId = createNewPipeline(client);

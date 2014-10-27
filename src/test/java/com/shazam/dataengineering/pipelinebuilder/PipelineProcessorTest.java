@@ -99,8 +99,8 @@ public class PipelineProcessorTest {
     @WithoutJenkins
     public void inliningCommandsContainingQuotesShouldProduceValidJson() throws Exception {
         PipelineProcessor processor = getDefaultPipelineProcessor();
-        String json = "{\"inlineThis\":\"\"\"multi\n\\\"line\\\"\ntext\"\"\"}";
-        String expected = "{\"inlineThis\":\"multi\\\"line\\\"text\"}";
+        String json = "{\"inlineThis\":\"\"\"multi\n\\\"line\\\"\nt'e'\\txt\"\"\"}";
+        String expected = "{\"inlineThis\":\"multi\\\"line\\\"t'e'\\txt\"}";
 
         Method method = processor.getClass().getDeclaredMethod("performInlining", String.class);
         method.setAccessible(true);

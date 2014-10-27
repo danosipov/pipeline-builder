@@ -7,7 +7,9 @@
                 <tr><td>
                     <f:form method="post" action="confirmProcess">
                         <f:section title="${%Define deployment}">
-                               TODO: Helpful text.
+                            Deploy a pipeline by replacing the current version by the JSON artifact in this build.
+                            Pay attention to the Scheduled start date, as the new pipeline will be activated to run starting
+                            on that date.
 
 
                             <f:entry title="${%Select Pipeline to Deploy}" field="pipeline">
