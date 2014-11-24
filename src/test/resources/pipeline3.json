@@ -30,7 +30,7 @@
       "type": "EmrActivity",
       "step": [
         "s3://us-east-1.elasticmapreduce/libs/script-runner/script-runner.jar,s3://us-east-1.elasticmapreduce/libs/pig/pig-script,--base-path,s3://us-east-1.elasticmapreduce/libs/pig/,--install-pig,--pig-versions,latest",
-        "s3://us-east-1.elasticmapreduce/libs/script-runner/script-runner.jar,s3://us-east-1.elasticmapreduce/libs/pig/pig-script,--base-path,s3://us-east-1.elasticmapreduce/libs/pig/,--pig-versions,latest,--run-pig-script,--args,-f,s3://bucket/script.pig,-p,PARALLEL=10,-p,INPUT=s3://bucket/year=#{format(minusDays(@scheduledStartTime,1),'YYYY')}/month=#{format(minusDays(@scheduledStartTime,1),'MM')}/day=#{format(minusDays(@scheduledStartTime,1),'dd')}/*,-p,OUTPUT=s3://bucket/output/#{format(minusDays(@scheduledStartTime,1),'YYYY-MM-dd')}"
+        "s3://us-east-1.elasticmapreduce/libs/script-runner/script-runner.jar,s3://us-east-1.elasticmapreduce/libs/pig/pig-script,--base-path,s3://us-east-1.elasticmapreduce/libs/pig/,--pig-versions,latest,--run-pig-script,--args,-f,s3://bucket/script.pig,-p,PARALLEL=10,-p,INPUT=s3://bucket/input/#{format(minusDays(@scheduledStartTime,1),'YYYY-MM-dd')}/*,-p,OUTPUT=s3://bucket/output/#{format(minusDays(@scheduledStartTime,1),'YYYY-MM-dd')}"
       ]
     },
     {
