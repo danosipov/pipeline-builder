@@ -154,7 +154,10 @@ public class PipelineProcessor {
         while (matcher.find()) {
             String longText = matcher.group();
             String sql = longText.substring(2, longText.length() - 2);
-            String replacement = sql.replace("\n", "").replace("\\", "\\\\");
+            String replacement = sql
+                    .replace("\n", "")
+                    .replace("\\", "\\\\")
+                    .replace("$", "\\$");
             matcher.appendReplacement(jsonBuffer, replacement);
         }
         matcher.appendTail(jsonBuffer);

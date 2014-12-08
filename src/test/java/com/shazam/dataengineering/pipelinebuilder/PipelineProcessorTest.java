@@ -97,6 +97,23 @@ public class PipelineProcessorTest {
 
     @Test
     @WithoutJenkins
+    public void inliningWithVariablesShouldProduceValidJson() throws Exception {
+        PipelineProcessor processor = getDefaultPipelineProcessor();
+        String json = "{\"inlineThis\":\"\"\"multi\nl${in}e\ntext\"\"\"}";
+        String expected = "{\"inlineThis\":\"multil${in}etext\"}";
+
+        Method method = processor.getClass().getDeclaredMethod("performInlining", String.class);
+        method.setAccessible(true);
+
+        String result = (String) method.invoke(processor, json);
+        assertEquals(expected, result);
+
+        PipelineObject pipelineObject = new PipelineObject(result);
+        assertTrue(pipelineObject.isValid());
+    }
+
+    @Test
+    @WithoutJenkins
     public void inliningCommandsContainingQuotesShouldProduceValidJson() throws Exception {
         PipelineProcessor processor = getDefaultPipelineProcessor();
         String json = "{\"inlineThis\":\"\"\"multi\n\\\"line\\\"\nt'e'\\txt\"\"\"}";
