@@ -1,0 +1,25 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:i="jelly:fmt">
+    <l:task icon="images/24x24/up.png" href="${it.getUrl()}" title="${%Back to Project}" contextMenu="false"/>
+    <l:task icon="images/24x24/notepad.png" href="${it.getUrl()}changes" title="${%Changes}" />
+    <j:choose>
+        <j:when test="${it.logFile.length() > 200000}">
+            <!-- Show raw link directly so user need not click through live console page. -->
+            <div class="task">
+                <a href="${it.getUrl()}console">
+                    <img width="24" height="24" style="margin: 2px;" src="${imagesURL}/24x24/terminal.png" alt=""/>
+                </a>
+                <st:nbsp />
+                <a href="${it.getUrl()}console">${%Console Output}</a>
+                <st:nbsp />
+                <a href="${it.getUrl()}consoleText">[${%raw}]</a>
+            </div>
+        </j:when>
+        <j:otherwise>
+            <l:task icon="images/24x24/terminal.png" href="${it.getUrl()}console" title="${%Console Output}" >
+                <l:task icon="images/24x24/document.png" href="${it.getUrl()}consoleText" title="${%View as plain text}" />
+            </l:task>
+        </j:otherwise>
+    </j:choose>
+    <l:task icon="images/24x24/notepad.png" href="${it.getUrl()}configure" title="${h.hasPermission(it,it.UPDATE)?'%Edit Build Information':'%View Build Information'}"/>
+</j:jelly>

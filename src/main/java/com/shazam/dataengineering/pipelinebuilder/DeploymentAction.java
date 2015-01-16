@@ -80,6 +80,10 @@ public class DeploymentAction implements Action {
         return lastException;
     }
 
+    public String getUrl() {
+        return build.getUpUrl();
+    }
+
     public boolean isStartDatePast() {
         return pipelineObject != null && PipelineObject.isPast(pipelineObject.getScheduleDate());
     }

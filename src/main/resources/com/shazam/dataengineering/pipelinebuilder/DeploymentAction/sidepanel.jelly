@@ -1,0 +1,16 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:i="jelly:fmt">
+    <l:header />
+    <l:side-panel>
+        <l:tasks>
+            <st:include page="tasks.jelly"/>
+            <st:include it="${it.build}" page="actions.jelly" />
+            <j:if test="${it.build.previousBuild!=null}">
+                <l:task icon="images/24x24/previous.png" href="${rootURL}/${it.build.previousBuild.getUrl()}" title="${%Previous Build}" contextMenu="false"/>
+            </j:if>
+            <j:if test="${it.build.nextBuild!=null}">
+                <l:task icon="images/24x24/next.png" href="${rootURL}/${it.build.nextBuild.getUrl()}" title="${%Next Build}" contextMenu="false"/>
+            </j:if>
+        </l:tasks>
+    </l:side-panel>
+</j:jelly>
