@@ -26,6 +26,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import static org.kohsuke.stapler.lang.Klass.java;
+
 public class DeploymentAction implements Action {
     private static final String LOG_FILENAME = "deployment.log";
 
@@ -164,7 +166,7 @@ public class DeploymentAction implements Action {
         // Validate start date, and warn if its in the past.
         if (!PipelineObject.validateDate(startDate)) {
             clientMessages.add("[ERROR] Passed start date was not in expected format: " + PipelineObject.PIPELINE_DATE_FORMAT);
-            resp.forward(this, "error", req);
+            req.getView(this, "error").forward(req, resp);
         } else if (PipelineObject.isPast(startDate)) {
             clientMessages.add("[WARN] Passed start date is in the past. Backfill may occur.");
         }
@@ -173,7 +175,7 @@ public class DeploymentAction implements Action {
         pipelineObject = getPipelineByName(pipelineFile);
         if (pipelineObject == null) {
             clientMessages.add("[ERROR] Pipeline not found");
-            resp.forward(this, "error", req);
+            req.getView(this, "error").forward(req, resp);
         } else {
             pipelineObject.setScheduleDate(startDate);
         }
@@ -190,7 +192,7 @@ public class DeploymentAction implements Action {
             pipelineToRemoveId = "";
         }
 
-        resp.forward(this, "confirm", req);
+        req.getView(this, "confirm").forward(req, resp);
     }
 
     public synchronized void doDeploy(StaplerRequest req, StaplerResponse resp) throws ServletException, IOException {
@@ -204,13 +206,13 @@ public class DeploymentAction implements Action {
             removeOldPipeline(client);
             activateNewPipeline(pipelineId, client);
             writeReport(start, true);
-            resp.forward(this, "report", req);
+            req.getView(this, "report").forward(req, resp);
         } catch (DeploymentException e) {
             if (e.getCause() != null) {
                 clientMessages.add("[ERROR] " + e.getCause().getMessage());
             }
             writeReport(start, false);
-            resp.forward(this, "error", req);
+            req.getView(this, "error").forward(req, resp);
         }
     }
 

@@ -215,6 +215,8 @@ public class DeploymentActionTest {
         verify(dataPipelineClient).activatePipeline(any(ActivatePipelineRequest.class));
     }
 
+    // TODO: Test writeReport method
+
 
     private String executeGetPipelineIdMethod(String pipelineFileName)
             throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
