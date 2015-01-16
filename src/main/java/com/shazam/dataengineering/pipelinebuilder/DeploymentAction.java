@@ -217,9 +217,11 @@ public class DeploymentAction implements Action {
                         clientMessages.add(String.format("[INFO] Upload successful!"));
                     } else {
                         clientMessages.add(String.format("[ERROR] Upload failed!"));
+                        throw new DeploymentException();
                     }
                 } else {
                     clientMessages.add(String.format("[ERROR] Unable to find %s in artifacts", filename));
+                    throw new DeploymentException();
                 }
             }
         }
