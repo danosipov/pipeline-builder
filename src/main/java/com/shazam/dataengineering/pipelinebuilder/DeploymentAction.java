@@ -8,22 +8,27 @@ import com.amazonaws.services.datapipeline.model.ValidationWarning;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import hudson.FilePath;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.Action;
-import hudson.model.Run;
+import hudson.model.*;
 import net.sf.json.JSONObject;
+import org.kohsuke.stapler.RequestImpl;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
+import org.kohsuke.stapler.TokenList;
 
 import javax.servlet.ServletException;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 public class DeploymentAction implements Action {
+    private static final String LOG_FILENAME = "deployment.log";
+
     private AbstractProject project;
     private AbstractBuild build;
     private Map<S3Environment, String> s3Urls;
@@ -190,6 +195,7 @@ public class DeploymentAction implements Action {
 
     public synchronized void doDeploy(StaplerRequest req, StaplerResponse resp) throws ServletException, IOException {
         DataPipelineClient client = new DataPipelineClient(credentials);
+        Date start = new Date();
         try {
             String pipelineId = createNewPipeline(client);
             validateNewPipeline(pipelineId, client);
@@ -197,11 +203,13 @@ public class DeploymentAction implements Action {
             deployScriptsToS3();
             removeOldPipeline(client);
             activateNewPipeline(pipelineId, client);
+            writeReport(start, true);
             resp.forward(this, "report", req);
         } catch (DeploymentException e) {
             if (e.getCause() != null) {
                 clientMessages.add("[ERROR] " + e.getCause().getMessage());
             }
+            writeReport(start, false);
             resp.forward(this, "error", req);
         }
     }
@@ -251,6 +259,7 @@ public class DeploymentAction implements Action {
         AWSProxy proxy = new AWSProxy(client);
         proxy.activatePipeline(pipelineId);
         clientMessages.add("[INFO] Pipeline has been activated!");
+        clientMessages.add("[INFO] New pipeline ID: " + pipelineId);
     }
 
     private void uploadNewPipeline(String pipelineId, DataPipelineClient client) throws DeploymentException {
@@ -315,5 +324,32 @@ public class DeploymentAction implements Action {
         String pipelineRegex = pipelineName.substring(0, pipelineName.lastIndexOf("-")) + "-\\d+";
         AWSProxy proxy = new AWSProxy(client);
         return proxy.getPipelineId(pipelineRegex);
+    }
+
+    private void writeReport(Date date, boolean success) {
+        FilePath newPath = new FilePath(new FilePath(build.getArtifactsDir()), LOG_FILENAME);
+        try {
+            String logContent = "";
+            DeploymentLog dto;
+
+            try {
+                logContent = newPath.readToString();
+            } catch (FileNotFoundException e) {
+                // Ignore
+            }
+
+            if (logContent.isEmpty()) {
+                dto = new DeploymentLog();
+            } else {
+                dto = new DeploymentLog(logContent);
+            }
+            dto.add(success, date, clientMessages);
+
+            newPath.write(dto.toString(), StandardCharsets.UTF_8.name());
+        } catch (IOException e) {
+            clientMessages.add("[ERROR] Failed to write deployment report!");
+        } catch (InterruptedException e) {
+            clientMessages.add("[ERROR] Failed to write deployment report!");
+        }
     }
 }
