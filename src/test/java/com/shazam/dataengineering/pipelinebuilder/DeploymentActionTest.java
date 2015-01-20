@@ -8,13 +8,18 @@ import hudson.FilePath;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Run;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -30,6 +35,9 @@ import static org.mockito.Mockito.*;
  * through the whole deployment in one step.
  */
 public class DeploymentActionTest {
+    @Rule
+    public TemporaryFolder testFolder = new TemporaryFolder();
+
     @Test
     public void getPipelineIdShouldReturnCorrectPipeline() throws Exception {
         String result = executeGetPipelineIdMethod("p1-this-is-a-test-pipeline-2");
@@ -217,16 +225,14 @@ public class DeploymentActionTest {
 
     @Test(expected = InvocationTargetException.class)
     public void failingS3DeploymentShouldThrowDeploymentException() throws Exception {
-        File artifactDir = mock(File.class);
-        when(artifactDir.getPath()).thenReturn("/path");
-        AbstractBuild build = getMockAbstractBuild();
-        when(build.getArtifactsDir()).thenReturn(artifactDir);
+        testFolder.newFolder("scripts");
+        testFolder.newFile("scripts/script.pig");
 
         HashMap<S3Environment, String> s3Urls = new HashMap<S3Environment, String>();
         s3Urls.put(new S3Environment("test.json", "script.pig"), "s3://bucket/");
 
         DeploymentAction action = new DeploymentAction(
-                build,
+                getMockAbstractBuild(),
                 s3Urls,
                 new AnonymousAWSCredentials());
 
@@ -239,8 +245,28 @@ public class DeploymentActionTest {
         method.invoke(action);
     }
 
-    // TODO: Test writeReport method
+    @Test
+    public void writingReportShouldCreateJsonFile() throws Exception {
+        DeploymentAction action = new DeploymentAction(
+                getMockAbstractBuild(),
+                new HashMap<S3Environment, String>(),
+                new AnonymousAWSCredentials());
 
+        Date date = new Date();
+
+        Method method = action.getClass().getDeclaredMethod("writeReport", Date.class, String.class, Boolean.TYPE);
+        method.setAccessible(true);
+
+        method.invoke(action, date, "test-1234", true);
+
+        File logFile = new File(testFolder.getRoot(), "deployment.log");
+        assertTrue(logFile.exists());
+
+        List<String> jsonContent = Files.readAllLines(logFile.toPath(), Charset.defaultCharset());
+        assertEquals(1, jsonContent.size());
+        assertEquals("{\"deployments\":[{\"date\":" + date.getTime() + ",\"messages\":[],\"username\":\"Anonymous\",\"status\":true,\"pipelineId\":\"test-1234\"}]}",
+                jsonContent.get(0));
+    }
 
     private String executeGetPipelineIdMethod(String pipelineFileName)
             throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
@@ -276,6 +302,7 @@ public class DeploymentActionTest {
         when(build.getProject()).thenReturn(project);
         when(project.getName()).thenReturn("test");
         when(build.getArtifacts()).thenReturn(new ArrayList< Run.Artifact>());
+        when(build.getArtifactsDir()).thenReturn(testFolder.getRoot());
 
         return build;
     }
