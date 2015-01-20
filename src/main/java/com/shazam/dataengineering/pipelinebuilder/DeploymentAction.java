@@ -9,24 +9,17 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import hudson.FilePath;
 import hudson.model.*;
+import jenkins.util.NonLocalizable;
 import net.sf.json.JSONObject;
-import org.kohsuke.stapler.RequestImpl;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
-import org.kohsuke.stapler.TokenList;
 
 import javax.servlet.ServletException;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import static org.kohsuke.stapler.lang.Klass.java;
+import java.util.*;
 
 public class DeploymentAction implements Action {
     private static final String LOG_FILENAME = "deployment.log";
@@ -89,6 +82,30 @@ public class DeploymentAction implements Action {
 
     public String getUrl() {
         return build.getUpUrl();
+    }
+
+    public List<Deployment> getDeployments() {
+        FilePath newPath = new FilePath(new FilePath(build.getArtifactsDir()), LOG_FILENAME);
+        try {
+            String logContent = newPath.readToString();
+
+            if (!logContent.isEmpty()) {
+                DeploymentLog dto = new DeploymentLog(logContent);
+                return dto.getAll();
+            }
+        } catch (IOException e) {
+            // Ignore
+        }
+
+        return Collections.EMPTY_LIST;
+    }
+
+    public BallColor getBallColorRed() {
+        return BallColor.RED;
+    }
+
+    public BallColor getBallColorBlue() {
+        return BallColor.BLUE;
     }
 
     public boolean isStartDatePast() {
@@ -205,13 +222,13 @@ public class DeploymentAction implements Action {
             deployScriptsToS3();
             removeOldPipeline(client);
             activateNewPipeline(pipelineId, client);
-            writeReport(start, true);
+            writeReport(start, pipelineId, true);
             req.getView(this, "report").forward(req, resp);
         } catch (DeploymentException e) {
             if (e.getCause() != null) {
                 clientMessages.add("[ERROR] " + e.getCause().getMessage());
             }
-            writeReport(start, false);
+            writeReport(start, "", false);
             req.getView(this, "error").forward(req, resp);
         }
     }
@@ -328,7 +345,7 @@ public class DeploymentAction implements Action {
         return proxy.getPipelineId(pipelineRegex);
     }
 
-    private void writeReport(Date date, boolean success) {
+    private void writeReport(Date date, String pipelineId, boolean success) {
         FilePath newPath = new FilePath(new FilePath(build.getArtifactsDir()), LOG_FILENAME);
         try {
             String logContent = "";
@@ -345,7 +362,7 @@ public class DeploymentAction implements Action {
             } else {
                 dto = new DeploymentLog(logContent);
             }
-            dto.add(success, date, clientMessages);
+            dto.add(success, pipelineId, date, clientMessages);
 
             newPath.write(dto.toString(), StandardCharsets.UTF_8.name());
         } catch (IOException e) {

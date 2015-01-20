@@ -31,8 +31,8 @@ public class DeploymentLog {
         log.put(ROOT, new JSONArray());
     }
 
-    public void add(boolean status, Date date, List<String> messages) {
-        add(new Deployment(status, date, messages));
+    public void add(boolean status, String pipelineId, Date date, List<String> messages) {
+        add(new Deployment(status, pipelineId, date, messages));
     }
 
     public void add(Deployment deployment) {
@@ -72,39 +72,4 @@ public class DeploymentLog {
         return parseException;
     }
 
-    public class Deployment {
-        private boolean status;
-        private Date date;
-        private List<String> messages;
-
-        public Deployment(boolean status, Date date, List<String> messages) {
-            this.status = status;
-            this.date = date;
-            this.messages = messages;
-        }
-
-        public Deployment(JSONObject obj) {
-            this.status = (Boolean) obj.get("status");
-            this.date = new Date((Long) obj.get(date));
-            JSONArray messageArray = (JSONArray) obj.get("messages");
-            this.messages = new ArrayList<String>();
-            for (int i = 0; i < messageArray.size(); i++) {
-                this.messages.add((String) messageArray.get(i));
-            }
-        }
-
-        public JSONObject toJSON() {
-            JSONArray messageArray = new JSONArray();
-            for (String message: messages) {
-                messageArray.add(message);
-            }
-
-            JSONObject deployment = new JSONObject();
-            deployment.put("status", status);
-            deployment.put("date", date.getTime());
-            deployment.put("messages", messageArray);
-
-            return deployment;
-        }
-    }
 }

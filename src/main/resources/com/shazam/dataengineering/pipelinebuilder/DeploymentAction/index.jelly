@@ -32,10 +32,38 @@
                             </j:if>
                             <tr><td colspan="3"><f:submit value="${%Deploy Pipeline}"/></td></tr>
                         </f:section>
+                        <f:section title="${%Previous deployments}">
+                            <table class="sortable pane" id="deployments">
+                                <tr>
+                                    <th><st:nbsp/></th>
+                                    <th>${%Status}</th>
+                                    <th initialSortDir="up">${%Date}</th>
+                                    <th>${%Pipeline ID}</th>
+                                    <th><st:nbsp/></th>
+                                </tr>
+                                <j:forEach var="deployment" items="${it.getDeployments()}">
+                                    <tr style="text-align: center;">
+                                        <td><st:nbsp/></td>
+                                        <t:setIconSize/>
+                                        <j:if test="${!deployment.getStatus()}">
+                                            <t:ballColorTd it="${it.ballColorRed}"/>
+                                        </j:if>
+                                        <j:if test="${deployment.getStatus()}">
+                                            <t:ballColorTd it="${it.ballColorBlue}"/>
+                                        </j:if>
+                                        <td data="${deployment.getISODate()}" style="vertical-align: middle;">${deployment.getDate().toString()}</td>
+                                        <td style="vertical-align: middle;">${deployment.getPipelineId()}</td>
+                                        <td><st:nbsp/></td>
+                                    </tr>
+                                </j:forEach>
+                            </table>
+                        </f:section>
                     </f:form>
                 </td></tr>
 
             </table>
+
         </l:main-panel>
+
     </l:layout>
 </j:jelly>
