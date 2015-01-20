@@ -215,6 +215,30 @@ public class DeploymentActionTest {
         verify(dataPipelineClient).activatePipeline(any(ActivatePipelineRequest.class));
     }
 
+    @Test(expected = InvocationTargetException.class)
+    public void failingS3DeploymentShouldThrowDeploymentException() throws Exception {
+        File artifactDir = mock(File.class);
+        when(artifactDir.getPath()).thenReturn("/path");
+        AbstractBuild build = getMockAbstractBuild();
+        when(build.getArtifactsDir()).thenReturn(artifactDir);
+
+        HashMap<S3Environment, String> s3Urls = new HashMap<S3Environment, String>();
+        s3Urls.put(new S3Environment("test.json", "script.pig"), "s3://bucket/");
+
+        DeploymentAction action = new DeploymentAction(
+                build,
+                s3Urls,
+                new AnonymousAWSCredentials());
+
+        Field pipelineFileField = action.getClass().getDeclaredField("pipelineFile");
+        pipelineFileField.setAccessible(true);
+        pipelineFileField.set(action, "test.json");
+        Method method = action.getClass().getDeclaredMethod("deployScriptsToS3");
+        method.setAccessible(true);
+
+        method.invoke(action);
+    }
+
     // TODO: Test writeReport method
 
 
