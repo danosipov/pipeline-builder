@@ -14,13 +14,15 @@ import java.util.List;
 * @see com.shazam.dataengineering.pipelinebuilder.DeploymentLog
 */
 public class Deployment {
+    private String username;
     private boolean status;
     private Date date;
     private String pipelineId;
     private List<String> messages;
     private static final DateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
 
-    public Deployment(boolean status, String pipelineId, Date date, List<String> messages) {
+    public Deployment(String username, boolean status, String pipelineId, Date date, List<String> messages) {
+        this.username = username;
         this.status = status;
         this.date = date;
         this.messages = messages;
@@ -28,6 +30,7 @@ public class Deployment {
     }
 
     public Deployment(JSONObject obj) {
+        this.username = (String) obj.get("username");
         this.status = (Boolean) obj.get("status");
         this.pipelineId = (String) obj.get("pipelineId");
         this.date = new Date((Long) obj.get("date"));
@@ -45,6 +48,7 @@ public class Deployment {
         }
 
         JSONObject deployment = new JSONObject();
+        deployment.put("username", username);
         deployment.put("status", status);
         deployment.put("pipelineId", pipelineId);
         deployment.put("date", date.getTime());
@@ -59,6 +63,10 @@ public class Deployment {
 
     public boolean getStatus() {
         return status;
+    }
+
+    public String getUsername() {
+        return username;
     }
 
     public Date getDate() {

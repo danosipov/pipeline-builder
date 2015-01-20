@@ -346,6 +346,14 @@ public class DeploymentAction implements Action {
     }
 
     private void writeReport(Date date, String pipelineId, boolean success) {
+        User currentUser = User.current();
+        String username;
+        if (currentUser != null) {
+            username = currentUser.getFullName();
+        } else {
+            username = "Anonymous";
+        }
+
         FilePath newPath = new FilePath(new FilePath(build.getArtifactsDir()), LOG_FILENAME);
         try {
             String logContent = "";
@@ -362,7 +370,7 @@ public class DeploymentAction implements Action {
             } else {
                 dto = new DeploymentLog(logContent);
             }
-            dto.add(success, pipelineId, date, clientMessages);
+            dto.add(username, success, pipelineId, date, clientMessages);
 
             newPath.write(dto.toString(), StandardCharsets.UTF_8.name());
         } catch (IOException e) {

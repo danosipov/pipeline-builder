@@ -31,8 +31,8 @@ public class DeploymentLog {
         log.put(ROOT, new JSONArray());
     }
 
-    public void add(boolean status, String pipelineId, Date date, List<String> messages) {
-        add(new Deployment(status, pipelineId, date, messages));
+    public void add(String username, boolean status, String pipelineId, Date date, List<String> messages) {
+        add(new Deployment(username, status, pipelineId, date, messages));
     }
 
     public void add(Deployment deployment) {

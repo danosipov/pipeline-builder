@@ -38,6 +38,7 @@
                                     <th><st:nbsp/></th>
                                     <th>${%Status}</th>
                                     <th initialSortDir="up">${%Date}</th>
+                                    <th>${%User}</th>
                                     <th>${%Pipeline ID}</th>
                                     <th><st:nbsp/></th>
                                 </tr>
@@ -52,7 +53,8 @@
                                             <t:ballColorTd it="${it.ballColorBlue}"/>
                                         </j:if>
                                         <td data="${deployment.getISODate()}" style="vertical-align: middle;">${deployment.getDate().toString()}</td>
-                                        <td style="vertical-align: middle;">${deployment.getPipelineId()}</td>
+                                        <td style="vertical-align: middle;">${deployment.username}</td>
+                                        <td style="vertical-align: middle;">${deployment.pipelineId}</td>
                                         <td><st:nbsp/></td>
                                     </tr>
                                 </j:forEach>
