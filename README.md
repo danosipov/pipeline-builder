@@ -32,9 +32,8 @@ Click "Add Configuration" and select either production or development configurat
 If you do want to use key-value replacement, place your key values as colon separated list, ex:
 
    
-       username: me
-       password: sup3rS3cure
-       cluster: redshift
+       name: Dynamo DB
+       table: staging_db
   
   
 See Key-value replacement below for more info.
@@ -48,15 +47,14 @@ You can start with the standard AWS pipeline JSON file, and make modifications t
 A typical use case for having multiple configuration is to provide different paths, so that development pipeline writes output to a different location than production. To avoid several pipeline files, a key can be placed in the pipeline definition as such:
    
        {
-         "id": "RedshiftDatabaseId_123",
-         "username": "${username}",
-         "name": "Redshift DB",
-         "*password": "${password}",
-         "type": "RedshiftDatabase",
-         "clusterId": "${cluster}"
+         "id" : "DynamoDBTable_123",
+         "type" : "DynamoDBDataNode",
+         "schedule" : { "ref" : "Schedule_123" },
+         "tableName" : "${table}",
+         "name": "${name}",
        },
        
-The keys for username, password, and cluster would be replaced with values taken from build configuration  
+The keys for table and name would be replaced with values taken from build configuration  
 
 ### File references
 
