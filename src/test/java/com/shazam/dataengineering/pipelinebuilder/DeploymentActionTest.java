@@ -1,5 +1,19 @@
+/*
+ * Copyright 2015 Shazam Entertainment Limited
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License
+ */
 package com.shazam.dataengineering.pipelinebuilder;
-
 
 import com.amazonaws.auth.AnonymousAWSCredentials;
 import com.amazonaws.services.datapipeline.DataPipelineClient;
@@ -33,7 +47,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * Test suite for the DeploymentAction class.
- *
+ * <p/>
  * Tests a lot of private methods, which is a bad practice, but
  * necessary to inject a mocked AWS client in this case, as well
  * as testing individual deployment pieces rather than walking
@@ -61,7 +75,7 @@ public class DeploymentActionTest {
 
         assertEquals("", result);
     }
-    
+
     @Test
     @WithoutJenkins
     public void removeOldPipelineShouldGenerateInfoMessagesForSuccess() throws Exception {
@@ -108,7 +122,7 @@ public class DeploymentActionTest {
 
     @Test
     @WithoutJenkins
-    public void validateNewPipelineShouldSaveWarningAndErrorMessages() throws Exception{
+    public void validateNewPipelineShouldSaveWarningAndErrorMessages() throws Exception {
         String pipelineId = "test1234";
         String json = new FilePath(new File("src/test/resources/pipeline3.json")).readToString();
         PipelineObject pipeline = new PipelineObject(json);
@@ -326,7 +340,7 @@ public class DeploymentActionTest {
 
         when(build.getProject()).thenReturn(project);
         when(project.getName()).thenReturn("test");
-        when(build.getArtifacts()).thenReturn(new ArrayList< Run.Artifact>());
+        when(build.getArtifacts()).thenReturn(new ArrayList<Run.Artifact>());
         when(build.getArtifactsDir()).thenReturn(testFolder.getRoot());
 
         return build;

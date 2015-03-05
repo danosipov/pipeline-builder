@@ -1,3 +1,18 @@
+/*
+ * Copyright 2015 Shazam Entertainment Limited
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License
+ */
 package com.shazam.dataengineering.pipelinebuilder;
 
 import hudson.FilePath;
@@ -56,7 +71,7 @@ public class PipelineProcessor {
                 String text = file.readToString();
                 int counter = 1;
 
-                for (Environment env: environments) {
+                for (Environment env : environments) {
                     String fileName = getFileName(env, counter);
                     counter += 1;
                     storeProcessedFile(fileName, text, env);
@@ -99,7 +114,7 @@ public class PipelineProcessor {
         String singleLineJson = performInlining(json);
         String newJson = performSubstitutions(singleLineJson, fileName, environment);
         List<String> warnings = warnForUnreplacedKeys(newJson);
-        for (String warning: warnings) {
+        for (String warning : warnings) {
             listener.getLogger().println("[WARN] " + warning);
         }
 
@@ -137,10 +152,10 @@ public class PipelineProcessor {
     /**
      * Convert multiline strings into single line string
      * Result should be a valid JSON.
-     *
+     * <p/>
      * Example:
      * """ test
-     *     string""" => " test    string"
+     * string""" => " test    string"
      * NOTE: Spaces get preserved
      *
      * @param json
@@ -189,7 +204,7 @@ public class PipelineProcessor {
 
     private String substituteMapValues(String json, Map<String, String> substitutions) {
         String pattern = "(\\$\\{%s\\})";
-        for (String key: substitutions.keySet()) {
+        for (String key : substitutions.keySet()) {
             String replacement = Matcher.quoteReplacement(substitutions.get(key));
             try {
                 json = json.replaceAll(
@@ -208,7 +223,7 @@ public class PipelineProcessor {
      * them to any files in the workspace. If we can, save the file in the artifacts.
      * During the deployment, the files would be uploaded to a special S3 bucket for
      * this job. The token is preemptively replaced by this URL.
-     *
+     * <p/>
      * This method assumes s3Url is set properly.
      *
      * @param json
@@ -295,7 +310,7 @@ public class PipelineProcessor {
         HashMap<String, String> substitutions = new HashMap<String, String>();
         String params = environment.getConfigParam();
         String[] lines = params.split("\\n");
-        for (String kv: lines) {
+        for (String kv : lines) {
             String[] keyAndValue = kv.split(":", 2);
             if (keyAndValue.length == 2) {
                 String key = keyAndValue[0].trim();

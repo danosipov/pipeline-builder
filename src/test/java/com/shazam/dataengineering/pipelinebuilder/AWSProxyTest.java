@@ -1,3 +1,18 @@
+/*
+ * Copyright 2015 Shazam Entertainment Limited
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ *
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License
+ */
 package com.shazam.dataengineering.pipelinebuilder;
 
 import com.amazonaws.AmazonServiceException;
@@ -132,9 +147,9 @@ public class AWSProxyTest {
 
         List<PipelineObject> objectList1 = new ArrayList<PipelineObject>();
         objectList1.add(new PipelineObject().withId("obj1").withFields(
-                        new Field().withKey("@status").withStringValue("FINISHED"),
-                        new Field().withKey("type").withStringValue("EmrCluster")
-                ));
+                new Field().withKey("@status").withStringValue("FINISHED"),
+                new Field().withKey("type").withStringValue("EmrCluster")
+        ));
         objectList1.add(new PipelineObject().withId("obj2").withFields(
                 new Field().withKey("@attemptCount").withStringValue("1"),
                 new Field().withKey("@status").withStringValue("FINISHED")
