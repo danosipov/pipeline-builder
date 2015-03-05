@@ -8,6 +8,9 @@ import hudson.FilePath;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Run;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -278,8 +281,16 @@ public class DeploymentActionTest {
 
         List<String> jsonContent = Files.readAllLines(logFile.toPath(), Charset.defaultCharset());
         assertEquals(1, jsonContent.size());
-        assertEquals("{\"deployments\":[{\"date\":" + date.getTime() + ",\"messages\":[],\"username\":\"SYSTEM\",\"status\":true,\"pipelineId\":\"test-1234\"}]}",
-                jsonContent.get(0));
+
+        JSONParser jsonParser = new JSONParser();
+        JSONObject log = (JSONObject) jsonParser.parse(jsonContent.get(0));
+        JSONArray deployments = (JSONArray) log.get("deployments");
+        JSONObject deployment = (JSONObject) deployments.get(0);
+
+        assertEquals(String.valueOf(date.getTime()), deployment.get("date").toString());
+        assertEquals("SYSTEM", deployment.get("username").toString());
+        assertEquals("true", deployment.get("status").toString());
+        assertEquals("test-1234", deployment.get("pipelineId"));
     }
 
     private String executeGetPipelineIdMethod(String pipelineFileName)
