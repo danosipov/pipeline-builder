@@ -11,6 +11,8 @@ import hudson.model.Run;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.WithoutJenkins;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -36,9 +38,13 @@ import static org.mockito.Mockito.*;
  */
 public class DeploymentActionTest {
     @Rule
+    public JenkinsRule jenkins = new JenkinsRule();
+
+    @Rule
     public TemporaryFolder testFolder = new TemporaryFolder();
 
     @Test
+    @WithoutJenkins
     public void getPipelineIdShouldReturnCorrectPipeline() throws Exception {
         String result = executeGetPipelineIdMethod("p1-this-is-a-test-pipeline-2");
 
@@ -46,6 +52,7 @@ public class DeploymentActionTest {
     }
 
     @Test
+    @WithoutJenkins
     public void getPipelineIdShouldReturnEmptyId() throws Exception {
         String result = executeGetPipelineIdMethod("p1-this-is-another-pipeline-2");
 
@@ -53,6 +60,7 @@ public class DeploymentActionTest {
     }
     
     @Test
+    @WithoutJenkins
     public void removeOldPipelineShouldGenerateInfoMessagesForSuccess() throws Exception {
         DataPipelineClient dataPipelineClient = mock(DataPipelineClient.class);
         DeploymentAction action = new DeploymentAction(
@@ -74,6 +82,7 @@ public class DeploymentActionTest {
     }
 
     @Test
+    @WithoutJenkins
     public void createNewPipelineShouldReturnPipelineId() throws Exception {
         DataPipelineClient dataPipelineClient = mock(DataPipelineClient.class);
         DeploymentAction action = new DeploymentAction(
@@ -95,6 +104,7 @@ public class DeploymentActionTest {
     }
 
     @Test
+    @WithoutJenkins
     public void validateNewPipelineShouldSaveWarningAndErrorMessages() throws Exception{
         String pipelineId = "test1234";
         String json = new FilePath(new File("src/test/resources/pipeline3.json")).readToString();
@@ -136,6 +146,7 @@ public class DeploymentActionTest {
     }
 
     @Test(expected = InvocationTargetException.class) // Caused by a DeploymentException
+    @WithoutJenkins
     public void validateNewPipelineShouldThrowExceptionWhenValidationFails() throws Exception {
         String pipelineId = "test1234";
         ArrayList<com.amazonaws.services.datapipeline.model.PipelineObject> pipelineList =
@@ -171,6 +182,7 @@ public class DeploymentActionTest {
     }
 
     @Test
+    @WithoutJenkins
     public void uploadNewPipelineShouldCallPutPipeline() throws Exception {
         String pipelineId = "test1234";
         ArrayList<com.amazonaws.services.datapipeline.model.PipelineObject> pipelineList =
@@ -202,6 +214,7 @@ public class DeploymentActionTest {
     }
 
     @Test
+    @WithoutJenkins
     public void activateNewPipelineShouldCallActivatePipeline() throws Exception {
         String pipelineId = "test1234";
         ActivatePipelineRequest activateRequest = new ActivatePipelineRequest()
@@ -224,6 +237,7 @@ public class DeploymentActionTest {
     }
 
     @Test(expected = InvocationTargetException.class)
+    @WithoutJenkins
     public void failingS3DeploymentShouldThrowDeploymentException() throws Exception {
         testFolder.newFolder("scripts");
         testFolder.newFile("scripts/script.pig");
@@ -264,7 +278,7 @@ public class DeploymentActionTest {
 
         List<String> jsonContent = Files.readAllLines(logFile.toPath(), Charset.defaultCharset());
         assertEquals(1, jsonContent.size());
-        assertEquals("{\"deployments\":[{\"date\":" + date.getTime() + ",\"messages\":[],\"username\":\"Anonymous\",\"status\":true,\"pipelineId\":\"test-1234\"}]}",
+        assertEquals("{\"deployments\":[{\"date\":" + date.getTime() + ",\"messages\":[],\"username\":\"SYSTEM\",\"status\":true,\"pipelineId\":\"test-1234\"}]}",
                 jsonContent.get(0));
     }
 
