@@ -3,6 +3,8 @@ Pipeline Builder is a Jenkins plugin to help you control AWS Data Pipeline deplo
 [AWS Data Pipeline](http://aws.amazon.com/datapipeline/) is a feature of Amazon Web Services that offers a workflow tool for automating data processing. Simple jobs can be built up using the Web interface through the AWS console. But more complex data flows require team collaboration and future edits, at which point the web interface reaches the limits of its usefulness. Data pipelines can be created in pure JSON, which is advantageous, since it can be checked into version control. This plugin adds further processing to the JSON file and automates deployments through Jenkins.
 
 ## Features
+
+[![Join the chat at https://gitter.im/danosipov/pipeline-builder](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/danosipov/pipeline-builder?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 - Replace tokens in your job by values (passwords, paths, etc)
 - Allows multiple versions (production/development) with different values
 - Deploy new versions of pipeline to AWS
