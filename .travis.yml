@@ -4,6 +4,6 @@ deploy:
   provider: releases
   api_key:
     secure: aQyFpJ+khpvF3fC1L82cYbcDrQqzxhcX72pl9HxXZL6hNcUAMV+u1pR6R4egDmTJLo+8AWU0OZmpvUw7UiPoHsR22N+3J1n+OLlUuQe7Ip4aO0AYCGjE9EKKeln2EnR9FprFrBZRBEubIaz8kiOr57CjZBhC1NKV1ziMG7NQMN8=
-  file: target/*.hpi
+  file: target/pipeline-builder.hpi
   on:
     all_branches: true
